@@ -1,0 +1,16 @@
+node_modules
+.next*
+.git
+.gitignore
+data
+.test-data
+test-results
+playwright-report
+blob-report
+coverage
+tests
+*.tsbuildinfo
+.env
+.env.*
+bun.lock
+**/.DS_Store

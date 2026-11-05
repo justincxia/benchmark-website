@@ -1,0 +1,201 @@
+section,model,condition,variant,dirpath,prefix,ext,takes
+ambiguity,elevenlabs,servant_actress,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_servant_actress_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,servant_actress,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_servant_actress_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,old_men_women,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_old_men_women_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,old_men_women,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_old_men_women_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,knife_towel_box,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_knife_towel_box_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,knife_towel_box,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_knife_towel_box_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,mirror_hallway,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_mirror_hallway_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,mirror_hallway,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_mirror_hallway_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,lisa_telescope,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_lisa_telescope_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,lisa_telescope,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_lisa_telescope_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,owners_corgis,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_owners_corgis_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,owners_corgis,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_owners_corgis_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,princesses_princes,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_princesses_princes_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,princesses_princes,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_princesses_princes_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,lid_bottle_tray,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_lid_bottle_tray_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,lid_bottle_tray,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_lid_bottle_tray_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,car_garage,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_car_garage_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,car_garage,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_car_garage_b,mp3,1;2;3;4;5
+ambiguity,elevenlabs,sergeant_binoculars,a,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_sergeant_binoculars_a,mp3,1;2;3;4;5
+ambiguity,elevenlabs,sergeant_binoculars,b,ElevenLabs eleven_v3 Outputs/Ambiguity,elevenlabs_sergeant_binoculars_b,mp3,1;2;3;4;5
+ambiguity,gemini_live,servant_actress,a,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,gemini_live,servant_actress,b,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,gemini_live,old_men_women,a,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,gemini_live,old_men_women,b,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,gemini_live,knife_towel_box,a,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,gemini_live,knife_towel_box,b,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,gemini_live,mirror_hallway,a,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,gemini_live,mirror_hallway,b,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,gemini_live,lisa_telescope,a,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,gemini_live,lisa_telescope,b,Gemini 3.1 Flash Live Outputs/Ambiguity,gemini_live_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,servant_actress,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,servant_actress,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,old_men_women,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,old_men_women,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,knife_towel_box,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,knife_towel_box,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,mirror_hallway,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,mirror_hallway,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,lisa_telescope,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,lisa_telescope,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,owners_corgis,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_owners_corgis_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,owners_corgis,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_owners_corgis_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,princesses_princes,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_princesses_princes_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,princesses_princes,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_princesses_princes_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,lid_bottle_tray,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_lid_bottle_tray_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,lid_bottle_tray,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_lid_bottle_tray_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,car_garage,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_car_garage_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,car_garage,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_car_garage_b,wav,1;2;3;4;5
+ambiguity,gemini_tts,sergeant_binoculars,a,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_sergeant_binoculars_a,wav,1;2;3;4;5
+ambiguity,gemini_tts,sergeant_binoculars,b,Gemini 3.1 Flash TTS Outputs/Ambiguity,gemini_ambiguity_sergeant_binoculars_b,wav,1;2;3;4;5
+ambiguity,openai_tts,servant_actress,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,openai_tts,servant_actress,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,openai_tts,old_men_women,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,openai_tts,old_men_women,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,openai_tts,knife_towel_box,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,openai_tts,knife_towel_box,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,openai_tts,mirror_hallway,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,openai_tts,mirror_hallway,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,openai_tts,lisa_telescope,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,openai_tts,lisa_telescope,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,openai_tts,owners_corgis,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_owners_corgis_a,wav,1;2;3;4;5
+ambiguity,openai_tts,owners_corgis,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_owners_corgis_b,wav,1;2;3;4;5
+ambiguity,openai_tts,princesses_princes,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_princesses_princes_a,wav,1;2;3;4;5
+ambiguity,openai_tts,princesses_princes,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_princesses_princes_b,wav,1;2;3;4;5
+ambiguity,openai_tts,lid_bottle_tray,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_lid_bottle_tray_a,wav,1;2;3;4;5
+ambiguity,openai_tts,lid_bottle_tray,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_lid_bottle_tray_b,wav,1;2;3;4;5
+ambiguity,openai_tts,car_garage,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_car_garage_a,wav,1;2;3;4;5
+ambiguity,openai_tts,car_garage,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_car_garage_b,wav,1;2;3;4;5
+ambiguity,openai_tts,sergeant_binoculars,a,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_sergeant_binoculars_a,wav,1;2;3;4;5
+ambiguity,openai_tts,sergeant_binoculars,b,OpenAI gpt-4o-mini-tts Outputs/Ambiguity,openai_ambiguity_sergeant_binoculars_b,wav,1;2;3;4;5
+ambiguity,openai_sts,servant_actress,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,openai_sts,servant_actress,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,openai_sts,old_men_women,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,openai_sts,old_men_women,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,openai_sts,knife_towel_box,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,openai_sts,knife_towel_box,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,openai_sts,mirror_hallway,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,openai_sts,mirror_hallway,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,openai_sts,lisa_telescope,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,openai_sts,lisa_telescope,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,openai_sts,owners_corgis,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_owners_corgis_a,wav,1;2;3;4;5
+ambiguity,openai_sts,owners_corgis,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_owners_corgis_b,wav,1;2;3;4;5
+ambiguity,openai_sts,princesses_princes,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_princesses_princes_a,wav,1;2;3;4;5
+ambiguity,openai_sts,princesses_princes,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_princesses_princes_b,wav,1;2;3;4;5
+ambiguity,openai_sts,lid_bottle_tray,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_lid_bottle_tray_a,wav,1;2;3;4;5
+ambiguity,openai_sts,lid_bottle_tray,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_lid_bottle_tray_b,wav,1;2;3;4;5
+ambiguity,openai_sts,car_garage,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_car_garage_a,wav,1;2;3;4;5
+ambiguity,openai_sts,car_garage,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_car_garage_b,wav,1;2;3;4;5
+ambiguity,openai_sts,sergeant_binoculars,a,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_sergeant_binoculars_a,wav,1;2;3;4;5
+ambiguity,openai_sts,sergeant_binoculars,b,OpenAI gpt-realtime-2 Outputs/Ambiguity,openai_sts_ambiguity_sergeant_binoculars_b,wav,1;2;3;4;5
+ambiguity,hume,servant_actress,a,Hume Octave Outputs/Ambiguity,hume_servant_actress_a,wav,1;2;3;4;5
+ambiguity,hume,servant_actress,b,Hume Octave Outputs/Ambiguity,hume_servant_actress_b,wav,1;2;3;4;5
+ambiguity,hume,old_men_women,a,Hume Octave Outputs/Ambiguity,hume_old_men_women_a,wav,1;2;3;4;5
+ambiguity,hume,old_men_women,b,Hume Octave Outputs/Ambiguity,hume_old_men_women_b,wav,1;2;3;4;5
+ambiguity,hume,knife_towel_box,a,Hume Octave Outputs/Ambiguity,hume_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,hume,knife_towel_box,b,Hume Octave Outputs/Ambiguity,hume_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,hume,mirror_hallway,a,Hume Octave Outputs/Ambiguity,hume_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,hume,mirror_hallway,b,Hume Octave Outputs/Ambiguity,hume_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,hume,lisa_telescope,a,Hume Octave Outputs/Ambiguity,hume_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,hume,lisa_telescope,b,Hume Octave Outputs/Ambiguity,hume_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,hume,owners_corgis,a,Hume Octave Outputs/Ambiguity,hume_owners_corgis_a,wav,1
+ambiguity,hume,owners_corgis,b,Hume Octave Outputs/Ambiguity,hume_owners_corgis_b,wav,1
+ambiguity,hume,princesses_princes,a,Hume Octave Outputs/Ambiguity,hume_princesses_princes_a,wav,1
+ambiguity,hume,princesses_princes,b,Hume Octave Outputs/Ambiguity,hume_princesses_princes_b,wav,1
+ambiguity,hume,lid_bottle_tray,a,Hume Octave Outputs/Ambiguity,hume_lid_bottle_tray_a,wav,1
+ambiguity,hume,lid_bottle_tray,b,Hume Octave Outputs/Ambiguity,hume_lid_bottle_tray_b,wav,1
+ambiguity,hume,car_garage,a,Hume Octave Outputs/Ambiguity,hume_car_garage_a,wav,1
+ambiguity,hume,car_garage,b,Hume Octave Outputs/Ambiguity,hume_car_garage_b,wav,1
+ambiguity,hume,sergeant_binoculars,a,Hume Octave Outputs/Ambiguity,hume_sergeant_binoculars_a,wav,1
+ambiguity,hume,sergeant_binoculars,b,Hume Octave Outputs/Ambiguity,hume_sergeant_binoculars_b,wav,1
+ambiguity,human,servant_actress,a,Human Outputs,servant_a,wav,1;2;3;4;5;6
+ambiguity,human,servant_actress,b,Human Outputs,servant_b,wav,1;2;3;4;5;6
+ambiguity,human,old_men_women,a,Human Outputs,old_men_a,wav,1;2;3;4;5;6
+ambiguity,human,old_men_women,b,Human Outputs,old_men_b,wav,1;2;3;4;5;6
+ambiguity,human,knife_towel_box,a,Human Outputs,knife_a,wav,1;2;3;4;5;6
+ambiguity,human,knife_towel_box,b,Human Outputs,knife_b,wav,1;2;3;4;5;6
+ambiguity,human,mirror_hallway,a,Human Outputs,david_a,wav,1;2;3;4;5;6
+ambiguity,human,mirror_hallway,b,Human Outputs,david_b,wav,1;2;3;4;5;6
+ambiguity,human,lisa_telescope,a,Human Outputs,lisa_a,wav,1;2;3;4;5;6
+ambiguity,human,lisa_telescope,b,Human Outputs,lisa_b,wav,1;2;3;4;5;6
+ambiguity,grok_tts,servant_actress,a,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,grok_tts,servant_actress,b,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,grok_tts,old_men_women,a,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,grok_tts,old_men_women,b,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,grok_tts,knife_towel_box,a,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,grok_tts,knife_towel_box,b,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,grok_tts,mirror_hallway,a,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,grok_tts,mirror_hallway,b,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,grok_tts,lisa_telescope,a,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,grok_tts,lisa_telescope,b,xAI Grok TTS Outputs/Ambiguity,grok_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,grok_sts,servant_actress,a,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,grok_sts,servant_actress,b,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,grok_sts,old_men_women,a,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,grok_sts,old_men_women,b,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,grok_sts,knife_towel_box,a,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,grok_sts,knife_towel_box,b,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,grok_sts,mirror_hallway,a,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,grok_sts,mirror_hallway,b,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,grok_sts,lisa_telescope,a,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,grok_sts,lisa_telescope,b,xAI grok-voice-latest Outputs/Ambiguity,grok_sts_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+ambiguity,nova_sts,servant_actress,a,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_servant_actress_a,wav,1;2;3;4;5
+ambiguity,nova_sts,servant_actress,b,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_servant_actress_b,wav,1;2;3;4;5
+ambiguity,nova_sts,old_men_women,a,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_old_men_women_a,wav,1;2;3;4;5
+ambiguity,nova_sts,old_men_women,b,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_old_men_women_b,wav,1;2;3;4;5
+ambiguity,nova_sts,knife_towel_box,a,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_knife_towel_box_a,wav,1;2;3;4;5
+ambiguity,nova_sts,knife_towel_box,b,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_knife_towel_box_b,wav,1;2;3;4;5
+ambiguity,nova_sts,mirror_hallway,a,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_mirror_hallway_a,wav,1;2;3;4;5
+ambiguity,nova_sts,mirror_hallway,b,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_mirror_hallway_b,wav,1;2;3;4;5
+ambiguity,nova_sts,lisa_telescope,a,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_lisa_telescope_a,wav,1;2;3;4;5
+ambiguity,nova_sts,lisa_telescope,b,Amazon Nova 2 Sonic Outputs/Ambiguity,nova_sonic_ambiguity_lisa_telescope_b,wav,1;2;3;4;5
+sincerity,elevenlabs,apology,sincere,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_apology_sincere,mp3,1;2;3;4;5
+sincerity,elevenlabs,apology,sarcastic,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_apology_sarcastic,mp3,1;2;3;4;5
+sincerity,elevenlabs,great,sincere,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_great_sincere,mp3,1;2;3;4;5
+sincerity,elevenlabs,great,sarcastic,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_great_sarcastic,mp3,1;2;3;4;5
+sincerity,elevenlabs,interesting,sincere,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_interesting_sincere,mp3,1;2;3;4;5
+sincerity,elevenlabs,interesting,sarcastic,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_interesting_sarcastic,mp3,1;2;3;4;5
+sincerity,elevenlabs,excited,sincere,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_excited_sincere,mp3,1;2;3;4;5
+sincerity,elevenlabs,excited,sarcastic,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_excited_sarcastic,mp3,1;2;3;4;5
+sincerity,elevenlabs,deadlines,sincere,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_deadlines_sincere,mp3,1;2;3;4;5
+sincerity,elevenlabs,deadlines,sarcastic,ElevenLabs eleven_v3 Outputs/Sincerity,elevenlabs_deadlines_sarcastic,mp3,1;2;3;4;5
+sincerity,gemini_tts,apology,sincere,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_apology_sincere,wav,1;2;3;4;5
+sincerity,gemini_tts,apology,sarcastic,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_apology_sarcastic,wav,1;2;3;4;5
+sincerity,gemini_tts,great,sincere,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_great_sincere,wav,1;2;3;4;5
+sincerity,gemini_tts,great,sarcastic,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_great_sarcastic,wav,1;2;3;4;5
+sincerity,gemini_tts,interesting,sincere,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_interesting_sincere,wav,1;2;3;4;5
+sincerity,gemini_tts,interesting,sarcastic,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_interesting_sarcastic,wav,1;2;3;4;5
+sincerity,gemini_tts,excited,sincere,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_excited_sincere,wav,1;2;3;4;5
+sincerity,gemini_tts,excited,sarcastic,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_excited_sarcastic,wav,1;2;3;4;5
+sincerity,gemini_tts,deadlines,sincere,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_deadlines_sincere,wav,1;2;3;4;5
+sincerity,gemini_tts,deadlines,sarcastic,Gemini 3.1 Flash TTS Outputs/Sincerity,gemini_sincerity_deadlines_sarcastic,wav,1;2;3;4;5
+sincerity,openai_tts,apology,sincere,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_apology_sincere,wav,1;2;3;4;5
+sincerity,openai_tts,apology,sarcastic,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_apology_sarcastic,wav,1;2;3;4;5
+sincerity,openai_tts,great,sincere,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_great_sincere,wav,1;2;3;4;5
+sincerity,openai_tts,great,sarcastic,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_great_sarcastic,wav,1;2;3;4;5
+sincerity,openai_tts,interesting,sincere,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_interesting_sincere,wav,1;2;3;4;5
+sincerity,openai_tts,interesting,sarcastic,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_interesting_sarcastic,wav,1;2;3;4;5
+sincerity,openai_tts,excited,sincere,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_excited_sincere,wav,1;2;3;4;5
+sincerity,openai_tts,excited,sarcastic,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_excited_sarcastic,wav,1;2;3;4;5
+sincerity,openai_tts,deadlines,sincere,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_deadlines_sincere,wav,1;2;3;4;5
+sincerity,openai_tts,deadlines,sarcastic,OpenAI gpt-4o-mini-tts Outputs/Sincerity,openai_sincerity_deadlines_sarcastic,wav,1;2;3;4;5
+sincerity,openai_sts,apology,sincere,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_apology_sincere,wav,1;2;3;4;5
+sincerity,openai_sts,apology,sarcastic,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_apology_sarcastic,wav,1;2;3;4;5
+sincerity,openai_sts,great,sincere,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_great_sincere,wav,1;2;3;4;5
+sincerity,openai_sts,great,sarcastic,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_great_sarcastic,wav,1;2;3;4;5
+sincerity,openai_sts,interesting,sincere,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_interesting_sincere,wav,1;2;3;4;5
+sincerity,openai_sts,interesting,sarcastic,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_interesting_sarcastic,wav,1;2;3;4;5
+sincerity,openai_sts,excited,sincere,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_excited_sincere,wav,1;2;3;4;5
+sincerity,openai_sts,excited,sarcastic,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_excited_sarcastic,wav,1;2;3;4;5
+sincerity,openai_sts,deadlines,sincere,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_deadlines_sincere,wav,1;2;3;4;5
+sincerity,openai_sts,deadlines,sarcastic,OpenAI gpt-realtime-2 Outputs/Sincerity,openai_sts_sincerity_deadlines_sarcastic,wav,1;2;3;4;5
+sincerity,hume,apology,sincere,Hume Octave Outputs/Sincerity,hume_apology_sincere,wav,1
+sincerity,hume,apology,sarcastic,Hume Octave Outputs/Sincerity,hume_apology_sarcastic,wav,1
+sincerity,hume,great,sincere,Hume Octave Outputs/Sincerity,hume_great_sincere,wav,1
+sincerity,hume,great,sarcastic,Hume Octave Outputs/Sincerity,hume_great_sarcastic,wav,1
+sincerity,hume,interesting,sincere,Hume Octave Outputs/Sincerity,hume_interesting_sincere,wav,1
+sincerity,hume,interesting,sarcastic,Hume Octave Outputs/Sincerity,hume_interesting_sarcastic,wav,1
+sincerity,hume,excited,sincere,Hume Octave Outputs/Sincerity,hume_excited_sincere,wav,1
+sincerity,hume,excited,sarcastic,Hume Octave Outputs/Sincerity,hume_excited_sarcastic,wav,1
+sincerity,hume,deadlines,sincere,Hume Octave Outputs/Sincerity,hume_deadlines_sincere,wav,1
+sincerity,hume,deadlines,sarcastic,Hume Octave Outputs/Sincerity,hume_deadlines_sarcastic,wav,1

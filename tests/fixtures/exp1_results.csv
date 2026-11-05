@@ -1,0 +1,8 @@
+participantID,session,experiment,trialNumber,label,condition,provider,audioTake,stimulusText,sonaID,intendedQuestion,isAttentionCheck,audioFile,naturalness_rating,human_or_ai,question_answered,finalDistractionRating,correctAnswer,attentionCheckResponse,training_word,trainingAttempts
+p1,0,training,,training,,,,,p1,,,,,,,,,,book;John,2
+p1,0,focus,1,trial_focus,melon,hume,2,Molly mailed a melon.,p1,What did Molly mail?,false,Hume Octave Outputs/Focus/hume_focus_melon_2.wav,4 - Mostly natural,Human,What did Molly mail?,1 - Not at all distracted,,,,
+p1,0,focus,2,trial_focus,a,hume,5,Molly mailed a melon.,p1,How many melons did Molly mail?,false,Hume Octave Outputs/Focus/hume_focus_a_5.wav,3 - In between unnatural and natural,AI,What happened?,1 - Not at all distracted,,,,
+p1,0,focus,3,trial_focus,broad,hume,1,Molly mailed a melon.,p1,What happened?,false,Hume Octave Outputs/Focus/hume_focus_broad_1.wav,4 - Mostly natural,AI,What happened?,1 - Not at all distracted,,,,
+p1,0,focus,4,trial_focus,molly,elevenlabs_v4,3,Molly mailed a melon.,p1,Who mailed a melon?,false,ElevenLabs eleven_v4 Outputs/Focus/elevenlabs_v4_focus_molly_3.wav,2 - Mostly unnatural,AI,What did Molly mail?,1 - Not at all distracted,,,,
+p2,0,focus,1,trial_focus,molly,elevenlabs_v4,1,Molly mailed a melon.,p2,Who mailed a melon?,false,ElevenLabs eleven_v4 Outputs/Focus/elevenlabs_v4_focus_molly_1.wav,NA,NA,NA,1 - Not at all distracted,,,,
+p2,0,focus,51,trial_focus,attention_check,,,"This is an attention check. To show you are reading carefully, please select the THIRD option below.",p2,,true,,,,,1 - Not at all distracted,How many melons did Molly mail?,How many melons did Molly mail?,,

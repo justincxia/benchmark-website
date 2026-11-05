@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# next.js (.next-test is the Playwright server's build dir)
+.next*/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# testing
+test-results/
+playwright-report/
+blob-report/
+.test-data/
+
+# data — generated DB and the copied audio corpus. seed/ holds the tracked source CSVs.
+data/
+*.db-wal
+*.db-shm
+
+# env / misc
+.env
+.env.*
+.DS_Store
+npm-debug.log*
