@@ -51,3 +51,17 @@ test('responses: invalid submissions are rejected and write nothing', async ({ r
   for (const data of bad) expect((await request.post('/api/responses', { data })).status()).toBe(400);
   expect(countRows('responses')).toBe(before);
 });
+
+test('responses: a repeated POST for the same participant/session/round adds no row', async ({ request }) => {
+  const data = {
+    participant: 'api-dup', session: 'dup-session', round: 3, clip: 'lisa_a_1.wav',
+    naturalness: 3, interpretation: 'A', listenedMs: 300,
+  };
+  const first = await request.post('/api/responses', { data });
+  expect(first.status()).toBe(201);
+  const before = countRows('responses');
+  const again = await request.post('/api/responses', { data: { ...data, naturalness: 5, interpretation: 'B' } });
+  expect(again.status()).toBe(200);
+  expect(await again.json()).toEqual({ ok: true, duplicate: true });
+  expect(countRows('responses')).toBe(before);
+});

@@ -25,6 +25,7 @@ USER user
 # Stimuli are not in the image; like the database they live on the persistent volume.
 ENV AUDIO_DIR=/data/audio
 ENV DATABASE_PATH=/data/arena.db
+ENV RECORDINGS_DIR=/data/recordings
 EXPOSE 7860
 # Refuse to start without stimuli, seed if empty (a no-op on a populated database), then serve.
 CMD ["sh", "-c", "node scripts/check-audio.ts && node scripts/seed.ts && npx next start -p 7860"]

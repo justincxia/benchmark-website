@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/lib/theme';
 import { MONO } from '@/lib/mono';
 import type { Experiment } from '@/lib/models';
-import { buildBlock, clipBars, type ClipInfo } from '@/lib/clips';
+import { buildBlock, type ClipInfo } from '@/lib/clips';
+import { attachAnalyser, barHeight, currentRms, detachAnalyser } from '@/lib/loudness';
 import {
   HUMAN_AI_OPTIONS,
   HUMAN_AI_PROMPT,
@@ -20,6 +21,10 @@ import {
 
 const PARTICIPANT_KEY = 'arena_participant';
 const MODE_KEY = 'arena_mode';
+/** sessionStorage: Play now was pressed during this visit, so the instructions stay hidden. */
+const STARTED_KEY = 'arena_started';
+/** Bars in the loudness timeline: each one is 1/48 of the clip. */
+const BARS = 48;
 const sessionKey = (exp: Experiment) => `arena_session_exp${exp}`;
 
 interface Session {
@@ -28,6 +33,9 @@ interface Session {
    *  block instead of 404ing mid-session. */
   block: string[];
   answered: number;
+  /** The current round's response has been saved. Persisted so a reload after submitting
+   *  shows "Response recorded" instead of a fresh form for the same round. */
+  submitted?: boolean;
 }
 
 // crypto.randomUUID() exists only on secure origins; a plain-http lab machine needs a fallback.
@@ -69,7 +77,8 @@ function loadSession(clips: ClipInfo[], exp: Experiment): Session {
         s.block.every((f) => typeof f === 'string' && known.has(f)) &&
         Number.isInteger(s.answered) &&
         s.answered >= 0 &&
-        s.answered < s.block.length
+        s.answered < s.block.length &&
+        (s.submitted === undefined || typeof s.submitted === 'boolean')
       ) {
         return s;
       }
@@ -105,6 +114,8 @@ export function ArenaPage({
   const [mode, setMode] = useState<Experiment | null>(null);
   const [sessions, setSessions] = useState<Partial<Record<Experiment, Session>>>({});
   const [participant, setParticipant] = useState<string | null>(null);
+  /** false = the start screen (instructions + Play now); true = the play screen. */
+  const [started, setStarted] = useState(false);
   /** The round whose sentence screen has been dismissed (Exp 2). */
   const [introDone, setIntroDone] = useState<string | null>(null);
   const clipsRef = useRef(clips);
@@ -130,6 +141,12 @@ export function ArenaPage({
     } catch {
       // default mode
     }
+    let wasStarted = false;
+    try {
+      wasStarted = window.sessionStorage.getItem(STARTED_KEY) === '1';
+    } catch {
+      // start screen
+    }
     const all = clipsRef.current;
     const next: Partial<Record<Experiment, Session>> = {};
     for (const exp of [1, 2] as const) {
@@ -139,6 +156,7 @@ export function ArenaPage({
     setParticipant(id);
     setSessions(next);
     setMode(m);
+    setStarted(wasStarted && next[m] !== undefined);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -152,6 +170,19 @@ export function ArenaPage({
   const switchMode = (m: Experiment) => {
     setMode(m);
     store(MODE_KEY, String(m));
+  };
+
+  const setPlayScreen = (on: boolean) => {
+    setStarted(on);
+    // Either screen starts at the top: on a phone, Play now sits below the fold of the start
+    // screen, and the play screen is laid out to fit without scrolling.
+    window.scrollTo(0, 0);
+    try {
+      if (on) window.sessionStorage.setItem(STARTED_KEY, '1');
+      else window.sessionStorage.removeItem(STARTED_KEY);
+    } catch {
+      // Blocked storage: the choice lives for this page view only.
+    }
   };
 
   const session = mode ? sessions[mode] : undefined;
@@ -170,10 +201,23 @@ export function ArenaPage({
       if (!s) return all;
       const answered = s.answered + 1;
       // Finishing the block starts a new one: fresh session id, same participant.
-      const ns = answered >= s.block.length ? newSession(clipsRef.current, mode) : { ...s, answered };
+      const ns = answered >= s.block.length ? newSession(clipsRef.current, mode) : { ...s, answered, submitted: false };
       return { ...all, [mode]: ns };
     });
   }, [mode]);
+
+  /** Marks the round as saved, if it is still the current round of that session. */
+  const markSubmitted = useCallback(
+    (sessionId: string, round: number) => {
+      if (!mode) return;
+      setSessions((all) => {
+        const s = all[mode];
+        if (!s || s.session !== sessionId || s.answered !== round || s.submitted) return all;
+        return { ...all, [mode]: { ...s, submitted: true } };
+      });
+    },
+    [mode]
+  );
 
   if (manifestError) {
     return (
@@ -190,63 +234,114 @@ export function ArenaPage({
     );
   }
 
-  return (
-    <>
-      <div style={{ marginBottom: 18 }}>
+  // Nothing until localStorage has been read, so a returning visitor never sees the start
+  // screen flash by on the way to their clip.
+  if (!mode) return <div style={{ minHeight: 320 }} />;
+
+  if (!started || !session || !clip || !participant) {
+    return (
+      <div data-testid="arena-start">
         <h1 className="text-2xl font-semibold tracking-tight" style={{ margin: '0 0 6px' }}>
           Arena
         </h1>
-        <p className="text-sm" style={{ margin: 0, color: t.mutedFg }}>
+        <p className="text-sm" style={{ margin: '0 0 18px', color: t.mutedFg }}>
           Take the survey trials yourself: listen to one clip, then answer the questions.
         </p>
-      </div>
 
-      <div className="mb-5 flex rounded-lg p-[3px]" style={{ background: t.muted }} role="tablist">
-        {([1, 2] as const).map((m) => {
-          const active = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-testid={`arena-mode-${m}`}
-              onClick={() => switchMode(m)}
-              className="flex-1 cursor-pointer rounded-md border-0 px-3.5 py-1.5 text-[12.5px] font-semibold"
-              style={{
-                background: active ? t.card : 'transparent',
-                color: active ? t.fg : t.mutedFg,
-                boxShadow: active ? t.shadow : 'none',
-                fontFamily: 'inherit',
-              }}
-            >
-              Experiment {m}
-            </button>
-          );
-        })}
-      </div>
+        <div
+          data-testid="arena-instructions"
+          className="mb-5 rounded-[10px] px-5 py-[18px] text-[13.5px] leading-[1.6]"
+          style={{ background: t.card, border: `1px solid ${t.border}`, boxShadow: t.shadow }}
+        >
+          <div className="mb-2 font-semibold">Instructions</div>
+          <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5" style={{ color: t.mutedFg }}>
+            <li>Each round plays one recording. Play it through at least once; you can replay it.</li>
+            <li>
+              The questions come one at a time. Pick an option, then press Next. Back lets you change an earlier
+              answer, and the last question has Submit.
+            </li>
+            <li>
+              Keys: Space plays or pauses the clip, the number or letter beside an option picks it, and Enter moves
+              on.
+            </li>
+            <li>We recommend a quiet space with headphones.</li>
+          </ul>
+        </div>
 
-      <div
-        className="mb-5 flex items-start gap-2.5 rounded-lg px-4 py-3"
-        style={{ background: t.muted, border: `1px solid ${t.border}` }}
-      >
-        <div className="mt-[3px] h-[15px] w-[15px] flex-shrink-0 rounded-full" style={{ border: `1.5px solid ${t.mutedFg}` }} />
-        <div className="text-[13px] leading-[1.55]">
-          <div className="mb-0.5 font-semibold">Instructions</div>
+        <div className="mb-2 flex rounded-lg p-[3px]" style={{ background: t.muted }} role="tablist">
+          {([1, 2] as const).map((m) => {
+            const active = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                data-testid={`arena-mode-${m}`}
+                onClick={() => switchMode(m)}
+                className="flex-1 cursor-pointer rounded-md border-0 px-3.5 py-1.5 text-[12.5px] font-semibold"
+                style={{
+                  background: active ? t.card : 'transparent',
+                  color: active ? t.fg : t.mutedFg,
+                  boxShadow: active ? t.shadow : 'none',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Experiment {m}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[12.5px]" style={{ margin: '0 0 20px', color: t.mutedFg }} data-testid="arena-mode-note">
+          {!session
+            ? `No Experiment ${mode} stimuli are available.`
+            : mode === 1
+              ? `Focus: ${session.block.length} recordings of one sentence, three questions each.`
+              : `Ambiguity: ${session.block.length} recordings of five sentences, two questions each.`}
+        </p>
+
+        <button
+          type="button"
+          data-testid="arena-play-now"
+          disabled={!session}
+          onClick={() => setPlayScreen(true)}
+          className="w-full rounded-lg border-0 p-3 text-center text-sm font-semibold"
+          style={{
+            background: t.primary,
+            color: t.primaryFg,
+            cursor: session ? 'pointer' : 'not-allowed',
+            opacity: session ? 1 : 0.5,
+            fontFamily: 'inherit',
+          }}
+        >
+          Play now
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="arena-game">
+      <div className="mb-3 flex items-center gap-3">
+        <h1 className="m-0 text-[13px] font-semibold" data-testid="arena-progress">
+          Experiment {mode}
           <span style={{ color: t.mutedFg }}>
-            Play the clip through at least once, then answer every question and submit. You can replay it. We
-            recommend a quiet space with headphones.
+            {' '}
+            · Clip {session.answered + 1} of {session.block.length}
           </span>
-        </div>
+        </h1>
+        <button
+          type="button"
+          data-testid="arena-show-instructions"
+          onClick={() => setPlayScreen(false)}
+          className="ml-auto cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium underline-offset-2 hover:underline"
+          style={{ color: t.mutedFg, fontFamily: 'inherit' }}
+        >
+          Instructions
+        </button>
       </div>
 
-      {mode && !session && (
-        <div data-testid="arena-empty" className="rounded-[10px] p-[22px] text-[13.5px]" style={{ background: t.card, border: `1px solid ${t.border}`, color: t.mutedFg }}>
-          No Experiment {mode} stimuli are available.
-        </div>
-      )}
-
-      {session && clip && participant && mode && showIntro && sentence && (
+      {showIntro && sentence ? (
         <div
           data-testid="arena-intro"
           className="rounded-[10px] p-5 text-[13.5px] leading-[1.6]"
@@ -275,20 +370,29 @@ export function ArenaPage({
             Continue
           </button>
         </div>
-      )}
-
-      {session && clip && participant && mode && !showIntro && (
+      ) : (
         <ArenaRound
           key={roundId}
           clip={clip}
           sentence={sentence}
           participant={participant}
           session={session}
+          alreadySubmitted={session.submitted === true}
+          onSaved={markSubmitted}
           onNext={next}
         />
       )}
-    </>
+    </div>
   );
+}
+
+/** One question of a round: its survey wording, the picker rows and the key that picks each. */
+interface Step {
+  id: string;
+  prompt: string;
+  options: { value: string; label: string; hint: string }[];
+  value: string | null;
+  pick: (value: string) => void;
 }
 
 function ArenaRound({
@@ -296,44 +400,123 @@ function ArenaRound({
   sentence,
   participant,
   session,
+  alreadySubmitted,
+  onSaved,
   onNext,
 }: {
   clip: ClipInfo;
   sentence: Exp2Sentence | null;
   participant: string;
   session: Session;
+  alreadySubmitted: boolean;
+  onSaved: (session: string, round: number) => void;
   onNext: () => void;
 }) {
   const { t } = useTheme();
   const exp = clip.experiment;
 
-  const [progress, setProgress] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [nat, setNat] = useState<number | null>(null);
   const [hai, setHai] = useState<HumanOrAi | null>(null);
   const [question, setQuestion] = useState<string | null>(null);
   const [interp, setInterp] = useState<Interpretation | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  /** Index of the question on screen. */
+  const [stepIndex, setStepIndex] = useState(0);
+  const [submitted, setSubmitted] = useState(alreadySubmitted);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>(
+    alreadySubmitted ? 'saved' : 'idle'
+  );
+  /** 'bars' = the loudness timeline; 'progress' = a plain progress bar (reduced motion, or no
+   *  Web Audio). */
+  const [meter, setMeter] = useState<'bars' | 'progress'>('bars');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listenedRef = useRef(0);
   const lastTimeRef = useRef(0);
-  const bars = useMemo(() => clipBars(clip.file), [clip.file]);
+  const timeRef = useRef<HTMLSpanElement | null>(null);
+  const fillRef = useRef<HTMLDivElement | null>(null);
+  const barRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /** Loudness measured for each slice of the clip, -1 where it has not been played yet. */
+  const levels = useRef<Float32Array>(new Float32Array(BARS).fill(-1));
+  const loud = useRef({ peak: 0, last: -1, lastRms: 0, wired: false });
 
-  /** Reads the element's own clock. Called from rAF while playing and from timeupdate (which
-   *  keeps listened time accruing in a background tab where rAF stops). */
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => {
+      if (mq.matches) setMeter('progress');
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    return () => {
+      if (a) detachAnalyser(a);
+    };
+  }, []);
+
+  /** Redraws the played bars from the measured levels (all of them: the scale follows the peak). */
+  const drawBars = useCallback(() => {
+    const { peak, last } = loud.current;
+    for (let k = 0; k < BARS; k++) {
+      const el = barRefs.current[k];
+      if (!el) continue;
+      const v = levels.current[k];
+      if (k > last || v < 0) {
+        if (el.dataset.level !== '') {
+          el.dataset.level = '';
+          el.style.height = '3px';
+          el.style.background = 'var(--arena-track)';
+        }
+      } else {
+        const h = barHeight(v, peak);
+        el.dataset.level = h.toFixed(3);
+        el.style.height = `${Math.max(3, Math.round(h * 44))}px`;
+        el.style.background = 'var(--arena-bar)';
+      }
+    }
+  }, []);
+
+  /** Clears the timeline: nothing about the clip's loudness is shown until it is played again. */
+  const clearBars = useCallback(() => {
+    levels.current.fill(-1);
+    loud.current.peak = 0;
+    loud.current.last = -1;
+    loud.current.lastRms = 0;
+    drawBars();
+  }, [drawBars]);
+
+  /** Reads the element's own clock (and, with Web Audio, how loud it is right now). Called from
+   *  rAF while playing and from timeupdate (which keeps listened time accruing in a background
+   *  tab where rAF stops). */
   const sample = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
     const d = a.currentTime - lastTimeRef.current;
     if (d > 0 && d < 1) listenedRef.current += d;
     lastTimeRef.current = a.currentTime;
-    setElapsed(a.currentTime);
-    setProgress(a.duration > 0 ? Math.min(a.currentTime / a.duration, 1) : 0);
-  }, []);
+    const progress = a.duration > 0 ? Math.min(a.currentTime / a.duration, 1) : 0;
+    if (timeRef.current) timeRef.current.textContent = fmt(a.currentTime);
+    if (fillRef.current) fillRef.current.style.width = `${(progress * 100).toFixed(1)}%`;
+
+    const L = loud.current;
+    if (!L.wired || a.paused || !(a.duration > 0)) return;
+    const rms = currentRms(a);
+    const idx = Math.min(BARS - 1, Math.floor(progress * BARS));
+    // Slices a slow frame skipped get a value between the last reading and this one.
+    for (let k = L.last + 1; k < idx; k++) {
+      const f = (k - L.last) / (idx - L.last);
+      levels.current[k] = L.lastRms + (rms - L.lastRms) * f;
+    }
+    levels.current[idx] = Math.max(levels.current[idx], rms);
+    L.last = Math.max(L.last, idx);
+    L.lastRms = rms;
+    L.peak = Math.max(L.peak, rms);
+    drawBars();
+  }, [drawBars]);
 
   useEffect(() => {
     if (!playing) return;
@@ -351,12 +534,18 @@ function ArenaRound({
       a.pause();
       return;
     }
-    if (a.ended) {
+    // Wire the analyser from the play gesture: that is when a browser lets audio start.
+    if (meter === 'bars') {
+      if (attachAnalyser(a)) loud.current.wired = true;
+      else setMeter('progress');
+    }
+    if (a.ended || a.currentTime === 0) {
       a.currentTime = 0;
       lastTimeRef.current = 0;
+      clearBars();
     }
     void a.play().catch(() => setPlaying(false));
-  }, []);
+  }, [meter, clearBars]);
 
   const restart = useCallback(() => {
     const a = audioRef.current;
@@ -364,12 +553,59 @@ function ArenaRound({
     a.pause();
     a.currentTime = 0;
     lastTimeRef.current = 0;
-    setProgress(0);
-    setElapsed(0);
-  }, []);
+    if (timeRef.current) timeRef.current.textContent = fmt(0);
+    if (fillRef.current) fillRef.current.style.width = '0%';
+    clearBars();
+  }, [clearBars]);
 
-  const answered = exp === 1 ? nat !== null && hai !== null && question !== null : interp !== null && nat !== null;
+  const steps: Step[] = useMemo(() => {
+    const naturalness: Step = {
+      id: 'nat',
+      prompt: NATURALNESS_PROMPT,
+      options: NATURALNESS_OPTIONS.map((label, i) => ({ value: String(i + 1), label, hint: String(i + 1) })),
+      value: nat === null ? null : String(nat),
+      pick: (v) => setNat(Number(v)),
+    };
+    if (exp === 1) {
+      return [
+        naturalness,
+        {
+          id: 'hai',
+          prompt: HUMAN_AI_PROMPT,
+          options: HUMAN_AI_OPTIONS.map((v) => ({ value: v, label: v, hint: v[0] })),
+          value: hai,
+          pick: (v) => setHai(v as HumanOrAi),
+        },
+        {
+          id: 'q',
+          prompt: QUESTION_PROMPT,
+          options: QUESTION_OPTIONS.map((label, i) => ({ value: String(i), label, hint: String(i + 1) })),
+          value: question === null ? null : String(QUESTION_OPTIONS.indexOf(question as (typeof QUESTION_OPTIONS)[number])),
+          pick: (v) => setQuestion(QUESTION_OPTIONS[Number(v)]),
+        },
+      ];
+    }
+    return [
+      {
+        id: 'interp',
+        prompt: INTERPRETATION_PROMPT,
+        options: (['A', 'B'] as const).map((v) => ({
+          value: v,
+          label: `${v}: ${(v === 'A' ? sentence?.optionA : sentence?.optionB) ?? ''}`,
+          hint: v,
+        })),
+        value: interp,
+        pick: (v) => setInterp(v as Interpretation),
+      },
+      naturalness,
+    ];
+  }, [exp, nat, hai, question, interp, sentence]);
+
+  const step = steps[Math.min(stepIndex, steps.length - 1)];
+  const isLast = stepIndex >= steps.length - 1;
+  const answered = steps.every((s) => s.value !== null);
   const canSubmit = completed && answered && !submitted;
+  const canNext = step.value !== null;
 
   const postResponse = useCallback(async () => {
     setSaveState('saving');
@@ -390,11 +626,13 @@ function ArenaRound({
           listenedMs: Math.round(listenedRef.current * 1000),
         }),
       });
+      // A 200 {duplicate:true} means the server already holds this round: still "recorded".
+      if (res.ok) onSaved(session.session, session.answered);
       setSaveState(res.ok ? 'saved' : 'failed');
     } catch {
       setSaveState('failed');
     }
-  }, [exp, hai, question, interp, nat, participant, session, clip.file]);
+  }, [exp, hai, question, interp, nat, participant, session, clip.file, onSaved]);
 
   const submit = useCallback(() => {
     if (!canSubmit) return;
@@ -403,79 +641,52 @@ function ArenaRound({
     void postResponse();
   }, [canSubmit, postResponse]);
 
+  /** Next on every question but the last, Submit on the last. */
+  const advance = useCallback(() => {
+    if (submitted) return;
+    if (isLast) submit();
+    else if (canNext) setStepIndex((i) => i + 1);
+  }, [submitted, isLast, canNext, submit]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
-      if (target && /INPUT|TEXTAREA|BUTTON/.test(target.tagName) && e.key === ' ') return;
+      const onControl = target !== null && /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(target.tagName);
+      // The clip's own controls and the picker rows don't claim Enter for themselves.
+      const passesEnter = target !== null && target.closest('[data-arena-enter]') !== null;
       if (e.key === ' ') {
+        if (onControl) return; // Space presses the focused control
         e.preventDefault();
         play();
-      } else if (['1', '2', '3', '4', '5'].includes(e.key)) {
-        // The naturalness prompt says "by pressing one of the following keys".
-        if (!submitted) setNat(Number(e.key));
       } else if (e.key === 'Enter') {
-        submit();
+        // Enter moves on, also right after clicking Play or a picker row (which leaves the focus
+        // there). On any other control (Back, Next, a link…) it presses that control.
+        if (onControl && !passesEnter) return;
+        e.preventDefault();
+        advance();
+      } else if (!submitted) {
+        const option = step.options.find((o) => o.hint.toLowerCase() === e.key.toLowerCase());
+        if (option) step.pick(option.value);
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [play, submit, submitted]);
+  }, [play, advance, submitted, step]);
 
-  const natQuestion = (
-    <Question title={NATURALNESS_PROMPT}>
-      <Options
-          disabled={submitted}
-        name="nat"
-        options={NATURALNESS_OPTIONS.map((label, i) => ({ value: i + 1, label }))}
-        value={nat}
-        onPick={setNat}
-      />
-    </Question>
-  );
+  const hint = !isLast || canSubmit ? '' : !canNext ? 'Pick an answer to submit.' : 'Play the clip to submit.';
 
-  const questions =
-    exp === 1 ? (
-      <>
-        {natQuestion}
-        <Question title={HUMAN_AI_PROMPT}>
-          <Options disabled={submitted} name="hai" options={HUMAN_AI_OPTIONS.map((v) => ({ value: v, label: v }))} value={hai} onPick={setHai} />
-        </Question>
-        <Question title={QUESTION_PROMPT}>
-          <Options
-          disabled={submitted}
-            name="q"
-            options={QUESTION_OPTIONS.map((v, i) => ({ value: String(i), label: v }))}
-            value={question === null ? null : String(QUESTION_OPTIONS.indexOf(question as (typeof QUESTION_OPTIONS)[number]))}
-            onPick={(i) => setQuestion(QUESTION_OPTIONS[Number(i)])}
-          />
-        </Question>
-      </>
-    ) : (
-      <>
-        <Question title={INTERPRETATION_PROMPT}>
-          <Options
-          disabled={submitted}
-            name="interp"
-            options={[
-              { value: 'A' as Interpretation, label: `A: ${sentence?.optionA ?? ''}` },
-              { value: 'B' as Interpretation, label: `B: ${sentence?.optionB ?? ''}` },
-            ]}
-            value={interp}
-            onPick={setInterp}
-          />
-        </Question>
-        {natQuestion}
-      </>
-    );
+  const smallButton = 'rounded-lg px-4 py-2 text-[13px] font-semibold';
+  const primaryStyle = (enabled: boolean) => ({
+    background: t.primary,
+    color: t.primaryFg,
+    border: `1px solid ${t.primary}`,
+    cursor: enabled ? 'pointer' : 'not-allowed',
+    opacity: enabled ? 1 : 0.45,
+    fontFamily: 'inherit',
+  });
 
-  const nQuestions = exp === 1 ? 'three' : 'both';
-  const submitLabel = !completed
-    ? 'Play the clip through once to submit'
-    : !answered
-      ? `Answer ${nQuestions} questions to submit`
-      : 'Submit answer';
-
-  const nextButton = (
+  const nextClipButton = (
     <button
       type="button"
       data-testid="arena-next"
@@ -489,17 +700,12 @@ function ArenaRound({
 
   return (
     <>
-      <div className="mb-4 rounded-[10px] p-5" style={{ background: t.card, border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
-        <div className="mb-3.5 flex items-center gap-2">
-          <span
-            data-testid="arena-progress"
-            className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-            style={{ color: t.secondaryFg, background: t.secondary, border: `1px solid ${t.border}` }}
-          >
-            Clip {session.answered + 1} of {session.block.length}
-          </span>
-        </div>
-
+      <div
+        className="mb-3 rounded-[10px] px-4 py-3"
+        style={{ background: t.card, border: `1px solid ${t.border}`, boxShadow: t.shadow }}
+        data-testid="arena-clip"
+        data-completed={completed ? 'true' : 'false'}
+      >
         <audio
           ref={audioRef}
           src={`/api/audio/${encodeURIComponent(clip.file)}`}
@@ -511,24 +717,23 @@ function ArenaRound({
           }}
           onPause={() => setPlaying(false)}
           onEnded={() => {
+            sample();
+            // The last frame rarely lands on the final slice: close the timeline with the last
+            // reading, so a finished clip never shows unplayed slots.
+            const L = loud.current;
+            if (L.wired && L.last >= 0 && L.last < BARS - 1) {
+              levels.current.fill(L.lastRms, L.last + 1);
+              L.last = BARS - 1;
+              drawBars();
+            }
             setPlaying(false);
             setCompleted(true);
-            setProgress(1);
+            if (fillRef.current) fillRef.current.style.width = '100%';
           }}
           data-testid="arena-audio"
         />
 
-        <div className="mb-3.5 flex h-[72px] cursor-pointer items-center gap-[3px] px-1" onClick={play} data-testid="arena-waveform">
-          {bars.map((h, k) => (
-            <div
-              key={k}
-              className="min-w-[2px] flex-1 rounded-sm"
-              style={{ height: Math.round(h * 62) + 'px', background: (k + 0.5) / bars.length <= progress ? t.fg : t.muted }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3" data-arena-enter="">
           <button
             type="button"
             data-testid="arena-play"
@@ -541,51 +746,164 @@ function ArenaRound({
               {playing ? '❚❚' : '▶'}
             </span>
           </button>
+
+          {meter === 'bars' ? (
+            // Loudness timeline: one bar per 1/48 of the clip, drawn as that part is played.
+            <div
+              data-testid="arena-meter"
+              data-mode="bars"
+              role="img"
+              aria-label="Loudness of the clip as it plays"
+              className="flex h-12 min-w-0 flex-1 cursor-pointer items-center gap-[2px]"
+              style={{ '--arena-bar': t.fg, '--arena-track': t.border } as React.CSSProperties}
+              onClick={play}
+            >
+              {Array.from({ length: BARS }, (_, k) => (
+                <div
+                  key={k}
+                  ref={(el) => {
+                    barRefs.current[k] = el;
+                  }}
+                  data-testid="arena-bar"
+                  data-level=""
+                  className="min-w-[1px] flex-1 rounded-full"
+                  style={{ height: 3, background: 'var(--arena-track)', transition: 'height 90ms ease-out' }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              data-testid="arena-meter"
+              data-mode="progress"
+              className="flex h-12 min-w-0 flex-1 cursor-pointer items-center"
+              onClick={play}
+            >
+              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: t.border }}>
+                <div ref={fillRef} className="h-full rounded-full" style={{ width: '0%', background: t.fg }} />
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
+            data-testid="arena-restart"
             onClick={restart}
             aria-label="Restart"
-            className="flex h-[34px] w-[34px] flex-shrink-0 cursor-pointer items-center justify-center rounded-full bg-transparent text-[13px]"
+            className="flex h-8 w-8 flex-shrink-0 cursor-pointer items-center justify-center rounded-full bg-transparent text-[13px]"
             style={{ border: `1px solid ${t.border}`, color: t.mutedFg }}
           >
             ↺
           </button>
-          <div className="text-[12.5px] font-medium" style={{ fontFamily: MONO, color: t.mutedFg }}>
-            {fmt(elapsed)}
-          </div>
-          <div
+        </div>
+
+        <div className="mt-1.5 flex items-center text-[11.5px]" style={{ color: t.mutedFg }}>
+          <span ref={timeRef} className="font-medium" style={{ fontFamily: MONO }}>
+            {fmt(0)}
+          </span>
+          <span
             data-testid="arena-status"
-            className="ml-auto text-[11.5px] font-semibold"
+            className="ml-auto font-semibold"
             style={{ color: completed ? t.success : t.mutedFg }}
           >
-            {completed ? '✓ Ready' : 'Play the clip through once'}
-          </div>
+            {completed ? '✓ Played' : 'Play the clip through once'}
+          </span>
         </div>
       </div>
 
-      {questions}
-
       {!submitted && (
-        <button
-          type="button"
-          data-testid="arena-submit"
-          onClick={submit}
-          aria-disabled={!canSubmit}
-          className="mt-1.5 w-full rounded-lg border-0 p-3 text-center text-sm font-semibold"
-          style={{
-            background: t.primary,
-            color: t.primaryFg,
-            cursor: canSubmit ? 'pointer' : 'not-allowed',
-            opacity: canSubmit ? 1 : 0.5,
-            fontFamily: 'inherit',
-          }}
+        <div
+          data-testid="arena-question"
+          className="rounded-[10px] px-4 py-4"
+          style={{ background: t.card, border: `1px solid ${t.border}`, boxShadow: t.shadow }}
         >
-          {submitLabel}
-        </button>
+          <div className="mb-1 text-[11px] font-semibold tracking-wide" style={{ color: t.mutedFg }} data-testid="arena-step">
+            {stepIndex + 1} of {steps.length}
+          </div>
+          <div className="mb-3 text-[13.5px] font-semibold" data-testid="arena-prompt">
+            {step.prompt}
+          </div>
+
+          <div className="flex flex-col gap-1.5" role="radiogroup" aria-label={step.prompt}>
+            {step.options.map((o) => {
+              const picked = step.value === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={picked}
+                  data-arena-enter=""
+                  data-testid={`arena-${step.id}-${o.value}`}
+                  onClick={() => step.pick(o.value)}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13px] font-medium"
+                  style={{
+                    border: `1px solid ${picked ? t.fg : t.border}`,
+                    background: picked ? t.accent : t.card,
+                    color: t.fg,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-md text-[11px] font-semibold"
+                    style={{
+                      fontFamily: MONO,
+                      background: picked ? t.primary : t.muted,
+                      color: picked ? t.primaryFg : t.mutedFg,
+                    }}
+                  >
+                    {o.hint}
+                  </span>
+                  <span className="min-w-0">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div className="min-w-0 flex-1 text-[11.5px] font-medium" style={{ color: t.mutedFg }} data-testid="arena-hint">
+              {hint}
+            </div>
+            {stepIndex > 0 && (
+              <button
+                type="button"
+                data-testid="arena-back"
+                onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+                className={`${smallButton} cursor-pointer bg-transparent`}
+                style={{ border: `1px solid ${t.border}`, color: t.fg, fontFamily: 'inherit' }}
+              >
+                Back
+              </button>
+            )}
+            {isLast ? (
+              <button
+                type="button"
+                data-testid="arena-submit"
+                onClick={submit}
+                disabled={!canSubmit}
+                className={smallButton}
+                style={primaryStyle(canSubmit)}
+              >
+                Submit
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="arena-next-question"
+                onClick={advance}
+                disabled={!canNext}
+                className={smallButton}
+                style={primaryStyle(canNext)}
+              >
+                Next
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {submitted && (
-        <div className="mt-1.5 rounded-[10px] p-[22px] text-center" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+        <div className="rounded-[10px] p-[22px] text-center" style={{ background: t.card, border: `1px solid ${t.border}` }}>
           {saveState === 'failed' ? (
             <>
               <div data-testid="arena-save-failed" className="mb-4 text-[13.5px] font-semibold" style={{ color: t.mutedFg }}>
@@ -601,7 +919,7 @@ function ArenaRound({
                 >
                   Retry
                 </button>
-                {nextButton}
+                {nextClipButton}
               </div>
             </>
           ) : (
@@ -609,63 +927,11 @@ function ArenaRound({
               <div data-testid="arena-recorded" className="mb-4 text-[13.5px] font-semibold" style={{ color: t.mutedFg }}>
                 {saveState === 'saving' ? 'Saving…' : 'Response recorded'}
               </div>
-              {saveState !== 'saving' && nextButton}
+              {saveState !== 'saving' && nextClipButton}
             </>
           )}
         </div>
       )}
     </>
-  );
-}
-
-function Question({ title, children }: { title: string; children: React.ReactNode }) {
-  const { t } = useTheme();
-  return (
-    <div className="mb-3.5 rounded-[10px] px-5 py-[18px]" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-      <div className="mb-3 text-[13.5px] font-semibold">{title}</div>
-      {children}
-    </div>
-  );
-}
-
-function Options<T extends string | number>({
-  name,
-  options,
-  value,
-  onPick,
-  disabled,
-}: {
-  name: string;
-  options: { value: T; label: string }[];
-  value: T | null;
-  onPick: (v: T) => void;
-  disabled: boolean;
-}) {
-  const { t } = useTheme();
-  return (
-    <div className="flex flex-col gap-2">
-      {options.map((o) => {
-        const picked = value === o.value;
-        return (
-          <button
-            key={String(o.value)}
-            type="button"
-            data-testid={`arena-${name}-${o.value}`}
-            aria-pressed={picked}
-            onClick={() => !disabled && onPick(o.value)}
-            className="rounded-lg px-3.5 py-2.5 text-left text-[13.5px] font-medium"
-            style={{
-              border: `1px solid ${picked ? t.fg : t.border}`,
-              background: picked ? t.accent : t.card,
-              color: t.fg,
-              cursor: disabled ? 'default' : 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }

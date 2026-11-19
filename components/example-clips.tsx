@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useTheme } from '@/lib/theme';
+import { InfoHeading } from '@/components/info-heading';
 
 export interface ExampleClip {
   key: string;
@@ -12,13 +13,11 @@ export interface ExampleClip {
 
 /** One playable example per model. */
 export function ExampleClips({ clips, caption }: { clips: ExampleClip[]; caption: string }) {
-  const { t } = useTheme();
   return (
     <section className="mt-10">
-      <h2 className="mb-1.5 text-[19px] font-semibold tracking-tight">Example clips</h2>
-      <p className="mb-4 text-[13.5px]" style={{ margin: '0 0 16px', color: t.mutedFg }}>
+      <InfoHeading id="examples" title="Example clips">
         {caption}
-      </p>
+      </InfoHeading>
       <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
         {clips.map((c) => (
           <ClipCard key={c.key} clip={c} />

@@ -1,4 +1,4 @@
-// Generates tiny silent wavs at the corpus's relative paths for the e2e suite, so nothing under
+// Generates tiny tone wavs at the corpus's relative paths for the e2e suite, so nothing under
 // tests/ depends on the gitignored data/audio/. Only clips whose stimulus extension is .wav are
 // written (the Exp 2 ElevenLabs clips are .mp3 and are simply absent from the test manifest).
 
@@ -7,8 +7,12 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadAllClips } from '../../lib/stimuli.ts';
 
-/** A mono 16 kHz 16-bit PCM wav of silence: long enough for `ended` to be observable. */
-export function writeTestWav(filePath: string, seconds = 0.3): void {
+/**
+ * A mono 16 kHz 16-bit PCM wav: a 440 Hz tone that is quiet for its first half and loud for
+ * its second, so the arena's loudness meter has something to show. Long enough for `ended`
+ * to be observable and for a test to pause it part-way.
+ */
+export function writeTestWav(filePath: string, seconds = 0.6): void {
   const rate = 16000;
   const samples = Math.round(rate * seconds);
   const buf = Buffer.alloc(44 + samples * 2);
@@ -25,6 +29,10 @@ export function writeTestWav(filePath: string, seconds = 0.3): void {
   buf.writeUInt16LE(16, 34);
   buf.write('data', 36, 'ascii');
   buf.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; i++) {
+    const amp = i < samples / 2 ? 0.06 : 0.6;
+    buf.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * amp * 32767), 44 + i * 2);
+  }
   writeFileSync(filePath, buf);
 }
 

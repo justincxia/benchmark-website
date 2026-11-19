@@ -39,15 +39,25 @@ export async function servedClip(page: Page): Promise<string> {
 export async function playThrough(page: Page) {
   await servedClip(page);
   await page.getByTestId('arena-play').click();
-  await expect(page.getByTestId('arena-status')).toContainText('Ready', { timeout: 15_000 });
+  // `ended` and not just the page's "played" flag, which stays set on a replay.
+  await expect
+    .poll(() => page.getByTestId('arena-audio').evaluate((a) => (a as HTMLAudioElement).ended), { timeout: 15_000 })
+    .toBe(true);
+  await expect(page.getByTestId('arena-clip')).toHaveAttribute('data-completed', 'true');
 }
 
-/** Opens the arena in a mode with a clean slate in localStorage for that page. */
+/** Opens the arena in a mode with a clean slate for that page, past the start screen (and, in
+ *  Experiment 2, past the sentence screen). */
 export async function openArena(page: Page, mode: 1 | 2) {
   await page.goto('/arena');
   await page.getByTestId(`arena-mode-${mode}`).click();
-  if (mode === 2) {
-    const intro = page.getByTestId('arena-intro');
-    if (await intro.isVisible().catch(() => false)) await page.getByTestId('arena-intro-continue').click();
-  }
+  await page.getByTestId('arena-play-now').click();
+  await expect(page.getByTestId('arena-game')).toBeVisible();
+  if (mode === 2) await page.getByTestId('arena-intro-continue').click();
+}
+
+/** Signs the page's browser context in as a test user via the e2e-only bypass. */
+export async function signIn(page: Page, sub: string, name = `Test ${sub}`, email = `${sub}@example.test`) {
+  const res = await page.request.post('/api/auth/test-login', { data: { sub, name, email } });
+  expect(res.status()).toBe(200);
 }

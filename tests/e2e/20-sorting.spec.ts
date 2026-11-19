@@ -1,40 +1,123 @@
 import { test, expect } from '@playwright/test';
-import { rowOrder } from './helpers';
+import { DB_PATH, rowOrder } from './helpers';
+import { DatabaseSync } from 'node:sqlite';
 
-const LIST_ORDER = [
+const EXP1_LIST_ORDER = [
   'elevenlabs', 'elevenlabs_v4', 'gemini_tts', 'gemini_live', 'openai_tts', 'openai_sts',
-  'hume', 'grok_tts', 'grok_sts', 'nova_sts', 'human',
+  'hume', 'grok_tts', 'grok_sts', 'nova_sts',
 ];
 
-test('default sort is Exp 1 focus accuracy (no Exp 1 data yet, so model-list order)', async ({ page }) => {
-  await page.goto('/leaderboard');
-  await expect(page.getByTestId('sort-exp1Focus')).toHaveAttribute('aria-pressed', 'true');
-  expect(await rowOrder(page, 'lb')).toEqual(LIST_ORDER);
-});
-
-test('clicking Exp 2 interpretation accuracy sorts descending, — last', async ({ page }) => {
-  await page.goto('/leaderboard');
-  await page.getByTestId('sort-exp2Interp').click();
+test('Experiment 2 opens sorted by its first column with data, interpretation accuracy', async ({ page }) => {
+  await page.goto('/leaderboard?exp=2');
   await expect(page.getByTestId('sort-exp2Interp')).toHaveAttribute('aria-pressed', 'true');
   expect(await rowOrder(page, 'lb')).toEqual([
     'human', 'grok_tts', 'elevenlabs', 'hume', 'gemini_tts', 'openai_sts',
-    'openai_tts', 'gemini_live', 'nova_sts', 'grok_sts', 'elevenlabs_v4',
+    'openai_tts', 'gemini_live', 'nova_sts', 'grok_sts',
   ]);
 });
 
-test('clicking Exp 2 naturalness sorts descending, — last', async ({ page }) => {
-  await page.goto('/leaderboard');
+test('Experiment 1 has no data yet, so it keeps the first column and model-list order', async ({ page }) => {
+  await page.goto('/leaderboard?exp=1');
+  await expect(page.getByTestId('sort-exp1Focus')).toHaveAttribute('aria-pressed', 'true');
+  expect(await rowOrder(page, 'lb')).toEqual(EXP1_LIST_ORDER);
+});
+
+test('clicking Naturalness sorts descending', async ({ page }) => {
+  await page.goto('/leaderboard?exp=2');
   await page.getByTestId('sort-exp2Nat').click();
+  await expect(page.getByTestId('sort-exp2Nat')).toHaveAttribute('aria-pressed', 'true');
   expect(await rowOrder(page, 'lb')).toEqual([
     'grok_sts', 'elevenlabs', 'human', 'grok_tts', 'nova_sts', 'openai_sts',
-    'openai_tts', 'hume', 'gemini_live', 'gemini_tts', 'elevenlabs_v4',
+    'openai_tts', 'hume', 'gemini_live', 'gemini_tts',
   ]);
 });
 
-test('every metric header is a sort control', async ({ page }) => {
-  await page.goto('/leaderboard');
-  for (const key of ['exp1Focus', 'exp1Nat', 'exp1Human', 'exp2Interp', 'exp2Nat']) {
+test('every metric header is a sort control, and the sort resets when the experiment changes', async ({ page }) => {
+  await page.goto('/leaderboard?exp=1');
+  for (const key of ['exp1Focus', 'exp1Nat', 'exp1Human']) {
     await page.getByTestId(`sort-${key}`).click();
     await expect(page.getByTestId(`sort-${key}`)).toHaveAttribute('aria-pressed', 'true');
   }
+  await page.getByTestId('exp-switch-2').click();
+  await expect(page.getByTestId('sort-exp2Interp')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('sort-exp2Nat').click();
+  await expect(page.getByTestId('sort-exp2Nat')).toHaveAttribute('aria-pressed', 'true');
+});
+
+// Accuracy per model over a set of sentences, straight from the seeded table, formatted like the app.
+function accuracyOver(conditions: string[]): Record<string, string> {
+  const db = new DatabaseSync(DB_PATH, { readOnly: true, timeout: 5000 });
+  try {
+    const rows = db
+      .prepare(
+        `SELECT provider, COUNT(interpretation) AS n, SUM(interpretation = intended_interpretation) AS k
+         FROM exp2_trials WHERE is_attention_check = 0 AND condition IN (${conditions.map(() => '?').join(',')})
+         GROUP BY provider`
+      )
+      .all(...conditions) as { provider: string; n: number; k: number }[];
+    return Object.fromEntries(rows.map((r) => [r.provider, (Math.round((r.k * 1000) / r.n) / 10).toFixed(1) + '%']));
+  } finally {
+    db.close();
+  }
+}
+
+const SENTENCES = ['servant_actress', 'lisa_telescope', 'mirror_hallway', 'old_men_women', 'knife_towel_box'];
+
+test('the Sentences dropdown beside Interpretation accuracy picks which sentences count', async ({ page }) => {
+  await page.goto('/leaderboard?exp=2');
+  const filter = page.getByTestId('sentence-filter');
+  await expect(filter).toHaveText(/All sentences/);
+  await expect(page.getByTestId('sentence-menu')).toHaveCount(0);
+  // It sits in the Interpretation accuracy header cell, next to the sort control.
+  expect(await filter.evaluate((el) => !!el.parentElement?.querySelector('[data-testid="sort-exp2Interp"]'))).toBe(true);
+
+  await filter.click();
+  await expect(page.getByTestId('sentence-menu')).toBeVisible();
+  for (const s of SENTENCES) await expect(page.getByTestId(`sentence-check-${s}`)).toBeChecked();
+  await expect(page.getByTestId('sentence-menu')).toContainText('The servant of the actress who was crying left.');
+
+  // Uncheck two sentences: accuracy is recomputed over the other three, naturalness is not.
+  await page.getByTestId('sentence-check-lisa_telescope').uncheck();
+  await page.getByTestId('sentence-check-knife_towel_box').uncheck();
+  await expect(filter).toHaveText(/3 of 5 sentences/);
+  const three = accuracyOver(['servant_actress', 'mirror_hallway', 'old_men_women']);
+  expect(Object.keys(three)).toHaveLength(10);
+  for (const [model, pct] of Object.entries(three)) {
+    await expect(page.getByTestId(`lb-${model}-exp2Interp`)).toHaveText(pct);
+  }
+  await expect(page.getByTestId('lb-human-exp2Nat')).toHaveText('3.59');
+  expect(three.human).not.toBe('69.9%');
+
+  // The table (sorted by accuracy) and the accuracy chart reorder to match.
+  const order = await rowOrder(page, 'lb');
+  const values = order.map((m) => parseFloat(three[m]));
+  expect(values).toEqual([...values].sort((a, b) => b - a));
+  await expect(page.getByTestId(`chart-exp2Interp-${order[0]}`)).toContainText(three[order[0]]);
+  await expect(page.locator('[data-testid^="chart-exp2Interp-"]').first()).toHaveAttribute('data-testid', `chart-exp2Interp-${order[0]}`);
+
+  // Down to one sentence: the last checked box cannot be unchecked.
+  await page.getByTestId('sentence-check-servant_actress').uncheck();
+  await page.getByTestId('sentence-check-mirror_hallway').uncheck();
+  await expect(filter).toHaveText(/1 of 5 sentences/);
+  await expect(page.getByTestId('sentence-check-old_men_women')).toBeDisabled();
+  await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText(accuracyOver(['old_men_women']).human);
+
+  // Check all restores the full numbers; Escape closes the menu.
+  await page.getByTestId('sentence-all').click();
+  await expect(filter).toHaveText(/All sentences/);
+  await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText('69.9%');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('sentence-menu')).toHaveCount(0);
+});
+
+test('the Sentences menu stays on screen at phone width, and Experiment 1 has no such menu', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/leaderboard?exp=2');
+  await page.getByTestId('sentence-filter').scrollIntoViewIfNeeded();
+  await page.getByTestId('sentence-filter').click();
+  const box = await page.getByTestId('sentence-menu').boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  await page.goto('/leaderboard?exp=1');
+  await expect(page.getByTestId('sentence-filter')).toHaveCount(0);
 });
