@@ -6,17 +6,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "node --disable-warning=ExperimentalWarning scripts/fetch-stimuli.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "node --disable-warning=ExperimentalWarning --conditions=react-server scripts/seed.ts",
     "copy-audio": "node --disable-warning=ExperimentalWarning scripts/copy-audio.ts",
+    "fetch-stimuli": "node --disable-warning=ExperimentalWarning scripts/fetch-stimuli.ts",
+    "migrate-sqlite": "node --disable-warning=ExperimentalWarning --conditions=react-server scripts/migrate-sqlite-to-supabase.ts",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset && node scripts/with-local-supabase.ts node --disable-warning=ExperimentalWarning --conditions=react-server scripts/seed.ts",
     "test:unit": "node scripts/with-local-supabase.ts node --disable-warning=ExperimentalWarning --conditions=react-server --test --test-concurrency=1 \"tests/unit/*.test.ts\"",
     "test:e2e": "node scripts/with-local-supabase.ts playwright test",
-    "test": "npm run test:unit && npm run test:e2e",
-    "migrate-sqlite": "node --disable-warning=ExperimentalWarning --conditions=react-server scripts/migrate-sqlite-to-supabase.ts"
+    "test": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",
@@ -39,6 +41,6 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   }
 }

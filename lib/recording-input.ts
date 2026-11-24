@@ -3,7 +3,10 @@
 
 import type { Prompt } from './prompts.ts';
 
-export const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
+// 4 MB: Vercel rejects any function request body over 4.5 MB before our code runs, so the cap
+// must sit below that to answer with our own 413. A spoken sentence is ~50 KB.
+export const MAX_RECORDING_BYTES = 4 * 1024 * 1024;
+export const MAX_RECORDING_LABEL = `${MAX_RECORDING_BYTES / (1024 * 1024)} MB`;
 
 /** File extension for a stored recording, chosen from the base MIME type — never from input. */
 const EXTENSIONS: Record<string, string> = {
@@ -36,6 +39,6 @@ export function validateRecordingUpload(
   const mime = baseAudioMime(input.contentType);
   if (!mime) return { error: 'content type must be audio/*', status: 415 };
   if (input.size === 0) return { error: 'empty recording', status: 400 };
-  if (input.size > MAX_RECORDING_BYTES) return { error: 'recording too large (max 5 MB)', status: 413 };
+  if (input.size > MAX_RECORDING_BYTES) return { error: `recording too large (max ${MAX_RECORDING_LABEL})`, status: 413 };
   return { value: { prompt, mime } };
 }

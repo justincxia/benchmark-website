@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { countRows, latestResponse } from './helpers';
 
-test('audio: a manifest clip streams, with Range support', async ({ request }) => {
-  const res = await request.get('/api/audio/hume_focus_melon_2.wav');
+test('audio: a manifest clip streams from /stimuli, with Range support', async ({ request }) => {
+  const res = await request.get('/stimuli/hume_focus_melon_2.wav');
   expect(res.status()).toBe(200);
   expect(res.headers()['content-type']).toBe('audio/wav');
-  const part = await request.get('/api/audio/hume_focus_melon_2.wav', { headers: { Range: 'bytes=0-43' } });
+  const part = await request.get('/stimuli/hume_focus_melon_2.wav', { headers: { Range: 'bytes=0-43' } });
   expect(part.status()).toBe(206);
   expect((await part.body()).subarray(0, 4).toString()).toBe('RIFF');
 });
@@ -18,7 +18,7 @@ test('audio: anything outside the manifest is a 404', async ({ request }) => {
     // In the stimulus lists, but .mp3 and so not in the test corpus.
     'elevenlabs_servant_actress_a_1.mp3',
   ]) {
-    expect((await request.get(`/api/audio/${name}`)).status()).toBe(404);
+    expect((await request.get(`/stimuli/${name}`)).status()).toBe(404);
   }
 });
 

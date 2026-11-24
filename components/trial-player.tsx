@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '@/lib/theme';
 import { MONO } from '@/lib/mono';
-import type { ClipInfo } from '@/lib/clips';
+import { stimulusUrl, type ClipInfo } from '@/lib/clips';
 import { attachAnalyser, barHeight, currentRms, detachAnalyser } from '@/lib/loudness';
 import {
   HUMAN_AI_OPTIONS,
@@ -27,7 +27,7 @@ function fmt(sec: number) {
 
 /** The URL the arena serves a clip from. */
 export function clipSrc(clip: ClipInfo): string {
-  return `/api/audio/${encodeURIComponent(clip.file)}`;
+  return stimulusUrl(clip.file);
 }
 
 /** A finished trial's answers, by experiment. Naturalness is 1–5. */
@@ -59,7 +59,7 @@ export interface TrialPlayerProps {
   /** The clip being judged. Its `experiment` picks the questions (Exp 1: naturalness, human or
    *  AI, which question; Exp 2: interpretation, naturalness). */
   clip: ClipInfo;
-  /** Audio URL. Defaults to the arena's `/api/audio/{file}` (see `clipSrc`). */
+  /** Audio URL. Defaults to the arena's `/stimuli/{file}` (see `clipSrc`). */
   src?: string;
   /** Exp 2 only: the sentence whose two readings label the interpretation rows. */
   sentence?: Exp2Sentence | null;

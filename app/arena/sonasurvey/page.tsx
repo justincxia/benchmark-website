@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { PageShell } from '@/components/page-shell';
 import { SonaSurveyPage } from '@/components/sona-survey-page';
-import { audioDir, getManifest } from '@/lib/clip-manifest';
+import { getManifest } from '@/lib/clip-manifest';
 import { estimateMinutes } from '@/lib/sona';
 import { sonaMinutes } from '@/lib/sona-duration';
 import type { ClipInfo } from '@/lib/clips';
 
-// Reads AUDIO_DIR at request time. (SONA_COMPLETION_URL is only ever sent by /api/sona/complete.)
+// Reads the stimuli manifest at request time. (SONA_COMPLETION_URL is only ever sent by /api/sona/complete.)
 export const dynamic = 'force-dynamic';
 
 // Hidden: reached only by the link posted on SONA. Nothing on the site links here, and
@@ -21,7 +21,7 @@ export default function Page() {
   let minutes = estimateMinutes([]);
   try {
     const manifest = getManifest();
-    minutes = sonaMinutes(audioDir(), manifest);
+    minutes = sonaMinutes(manifest);
     // The on-disk path stays on the server; the client names clips by basename only.
     clips = manifest.map(({ relPath: _relPath, ...c }) => c);
   } catch (e) {

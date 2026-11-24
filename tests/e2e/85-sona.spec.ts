@@ -92,7 +92,7 @@ test('a full debug run: 3 clips, contact, thank-you; saved apart from the arena'
   expect(session).toMatchObject({ debug: true, sona_id: 'TEST123', completed_at: null });
   expect(session.block).toHaveLength(3);
   expect(session.user_agent).toBeTruthy();
-  expect(session.block.map((f: string) => `/api/audio/${encodeURIComponent(f)}`)).not.toContain(volumeSrc);
+  expect(session.block.map((f: string) => `/stimuli/${encodeURIComponent(f)}`)).not.toContain(volumeSrc);
   await passVolumeCheck(page);
 
   // The first save fails twice; the answer is retried in the background with a warning.

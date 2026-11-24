@@ -62,7 +62,7 @@ export async function rowOrder(page: Page, testId: string): Promise<string[]> {
 /** The clip the arena is showing, read off the audio element (attached after hydration). */
 export async function servedClip(page: Page): Promise<string> {
   const audio = page.getByTestId('arena-audio');
-  await expect(audio).toHaveAttribute('src', /\/api\/audio\/.+\.(wav|mp3)$/, { timeout: 15_000 });
+  await expect(audio).toHaveAttribute('src', /\/stimuli\/.+\.(wav|mp3)$/, { timeout: 15_000 });
   const src = await audio.getAttribute('src');
   return decodeURIComponent(String(src).split('/').pop() as string);
 }

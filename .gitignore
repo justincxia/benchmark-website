@@ -14,8 +14,10 @@ playwright-report/
 blob-report/
 .test-data/
 
-# data — generated DB and the copied audio corpus. seed/ holds the tracked source CSVs.
+# data — local audio copies and the generated stimuli manifest. seed/ holds the tracked source CSVs.
 data/
+# The stimuli served as static files: copied from tts-sts-audio by copy-audio / fetch-stimuli.
+public/stimuli/
 *.db-wal
 *.db-shm
 

@@ -15,7 +15,7 @@ description behind an (i) button. The plot images in `public/plots` are copies o
 renamed to the model keys in `lib/models.ts` (`lib/plots.ts` lists them); the site-name pill (top left) links to `/`, the user-icon pill (top right) links to `/account`,
 and its cog opens a preferences menu (for now one row, Theme, with the Light/Dark switcher; the
 only theme control). Every page ends with a centered footer line, "Made by Penn Phonetics Lab - Privacy policy", with the last two words linked to `/privacy`. APIs:
-`GET /api/audio/<file>` (manifest-allowlisted, supports `Range`), `POST /api/responses`, the
+stimuli at `/stimuli/<file>` (static files), `POST /api/responses`, the SONA routes under `/api/sona/`, the
 sign-in routes under `/api/auth/`, and the recording routes under `/api/recordings`.
 
 ### The intro page (`/`)
@@ -46,7 +46,7 @@ SONA survey's `sona_*`) live in Supabase Postgres, and Record-tab uploads live i
 Supabase Storage bucket. The schema is in `supabase/migrations/`. Only server code talks to
 Supabase, over HTTPS with `@supabase/supabase-js` and the service-role key; every table has row
 level security on with no policies, so the public (anon) key can read nothing. (HTTPS rather than
-a Postgres TCP driver because HuggingFace Spaces only allow outbound ports 80, 443 and 8080.)
+a Postgres TCP driver: it works from any host, serverless functions included.)
 
 | Variable | Notes |
 | --- | --- |
@@ -108,18 +108,27 @@ is stored for reference only. The leaderboard's counts come from three views
 (`exp1_counts`, `exp2_counts`, `exp2_interp_by_sentence`); `tests/fixtures/baseline-metrics.json`
 holds their expected output, captured from the SQLite version, and a unit test checks it.
 
-## Copy the audio
+## The audio (stimuli)
 
-The stimuli come from a local clone of https://github.com/justincxia/tts-sts-audio. Only the
-clips the experiments reference (250 for Exp 1, 510 for Exp 2's five sentences, ~150 MB) are
-copied, keeping the repo's relative layout:
+The stimuli live in https://github.com/justincxia/tts-sts-audio. The site serves only the clips
+the experiments reference (250 for Exp 1, 510 for Exp 2's five sentences, ~143 MB) as static files
+at `/stimuli/<basename>`, from `public/stimuli/` (gitignored). Alongside them a small manifest,
+`data/stimuli-manifest.json` (also gitignored), lists which clips exist with their size and
+duration; the server reads only that, never the audio. Both are produced by one of:
 
 ```bash
-npm run copy-audio -- /path/to/tts-sts-audio   # → data/audio/ (or AUDIO_DIR)
+npm run fetch-stimuli                           # the commit pinned in audio.lock (what Vercel builds)
+npm run copy-audio -- /path/to/tts-sts-audio    # from a clone you already have
 ```
 
-`AUDIO_DIR` overrides the location (default `data/audio`). Without audio the arena shows
-"Stimuli unavailable" and the example players show "Audio unavailable".
+Both fail if any referenced clip is missing. Without them the arena shows "Stimuli unavailable"
+and the example players show "Audio unavailable".
+
+**`audio.lock`** pins the exact `tts-sts-audio` commit the site serves, so a push to the audio repo
+never changes a deployed study by itself. To ship new audio: push it to `tts-sts-audio`, put the
+new commit in `audio.lock` (`git ls-remote https://github.com/justincxia/tts-sts-audio.git HEAD`),
+commit and push; that deploy fetches it. The audio repo must stay public (or the build needs a
+token to fetch it).
 
 ## The arena
 
@@ -210,8 +219,8 @@ session cookie `pb_session` is httpOnly, SameSite=Lax, 30 days, and `Secure` und
 | Variable | Needed for | Notes |
 | --- | --- | --- |
 | `GOOGLE_CLIENT_ID` | sign-in | from the OAuth client below |
-| `GOOGLE_CLIENT_SECRET` | sign-in | from the OAuth client below; keep it secret (an HF Space *secret*) |
-| `APP_URL` | sign-in behind a proxy | public origin, e.g. `https://<user>-<space>.hf.space`; the redirect URI is `$APP_URL/api/auth/callback`. Defaults to the request's own origin, which is fine for localhost |
+| `GOOGLE_CLIENT_SECRET` | sign-in | from the OAuth client below; keep it secret (a *sensitive* Vercel variable) |
+| `APP_URL` | sign-in | public origin, e.g. `https://<project>.vercel.app` (or your own domain); the redirect URI is `$APP_URL/api/auth/callback`. Defaults to the request's own origin, which is fine for localhost |
 
 Without both Google variables, `/account` shows "Sign-in isn't configured on this server"
 instead of the button, and the rest of the site works as before.
@@ -226,13 +235,12 @@ instead of the button, and the rest of the site works as before.
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type *Web
    application*. Under **Authorized redirect URIs** add:
    - `http://localhost:3000/api/auth/callback` (local dev)
-   - `https://<user>-<space>.hf.space/api/auth/callback` (the HF Space's direct URL)
+   - `https://<project>.vercel.app/api/auth/callback` (production; add your own domain too if you use one)
 4. Copy the client ID and secret into `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (a local
-   `.env.local`, or the Space's *Settings → Variables and secrets*), and on the Space also set
-   `APP_URL=https://<user>-<space>.hf.space`.
+   `.env.local`, or Vercel's *Settings → Environment Variables*), and on Vercel also set
+   `APP_URL=https://<project>.vercel.app`.
 
-Google refuses sign-in inside iframes and the cookie is SameSite=Lax, so on HF use the Space's
-direct `*.hf.space` URL, not the embedded huggingface.co page.
+Google refuses sign-in inside iframes, so always open the site at its own address.
 
 ## Tests
 
@@ -249,7 +257,8 @@ Both suites run against the **local** Supabase stack, never the hosted project:
 `supabase status`, and the test helpers refuse a non-local host. Pure-logic unit tests (`csv`,
 `metrics`, `response-input`, …) don't touch the database; the DB ones use unique keys and clean up
 after themselves. The e2e suite runs `npm run db:reset` (every table emptied, migrations
-re-applied, seeded from `seed/`), writes short tone fixture stimuli to `.test-data/audio`, and boots
+re-applied, seeded from `seed/`), writes short tone fixture stimuli to `.test-data/audio` (served from there through `/api/audio`,
+with their own manifest, so the real audio in `public/stimuli/` is never involved), and boots
 its own dev server on port 3100 with a separate build directory (`.next-test`), so it runs
 alongside `npm run dev` (which shares the local database, so expect it to be reset). The fixture stimuli are a tone that is quiet, then loud, which the arena's loudness-meter test relies on. It asserts the leaderboard's Exp 2 numbers exactly, the arena flow (start screen, one question at a time, Back, Submit gating, keys, fits one screen at 1280×800 and 375×667, loudness bars), the intro page (steps, links, reduced motion, 375px, no console errors, no requests to other hosts), the footer link on every page, the column sorting, that an
 arena submission adds exactly one `responses` row, reveals nothing, and leaves the survey
@@ -264,35 +273,52 @@ Playwright also sets placeholder Google credentials (so the sign-in button and t
 Google can be checked) and Chromium's fake-microphone flags. No test performs a real Google
 sign-in.
 
-## Deployment
+## Deployment (Vercel)
 
-HuggingFace Docker Space (`Dockerfile`, port 7860, uid 1000). Enable persistent storage and
-upload the stimuli to `/data/audio` (same layout as `data/audio`); the image sets
-`AUDIO_DIR=/data/audio` and refuses to start without stimuli. All other data is in Supabase.
+The site deploys to Vercel from the GitHub repo. `vercel.json` makes the build
+`npm run vercel-build`: it fetches the audio pinned in `audio.lock` into `public/stimuli/` (failing
+the build if any referenced clip is missing), then runs `next build`. Vercel serves the clips from
+its CDN; server functions get the stimulus CSVs in `seed/` and the stimuli manifest through
+`outputFileTracingIncludes` in `next.config.ts`. Node is pinned to 24 (`engines` in
+`package.json`). All data is in Supabase. Vercel rejects request bodies over 4.5 MB, so Record-tab
+uploads are capped at 4 MB.
 
-Space *secrets*: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_CLIENT_SECRET`; *variables*:
-`GOOGLE_CLIENT_ID`, `APP_URL`, and optionally `SUPABASE_RECORDINGS_BUCKET` and
-`SONA_COMPLETION_URL`.
+1. **Supabase** (once): create the project, then from this repo
+   `npx supabase link --project-ref <ref>` and `npx supabase db push --remote` (without
+   `--remote`, the CLI targets the local stack whenever it is running). Seed the survey tables:
+   `node --env-file=.env.local --disable-warning=ExperimentalWarning --conditions=react-server scripts/seed.ts`
+   with `.env.local` holding the hosted `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
+2. **Vercel project**: *Add New → Project*, import the GitHub repo; the framework is detected as
+   Next.js and `vercel.json` sets the build command.
+3. **Environment variables** (*Settings → Environment Variables*):
 
-### Production cut-over (from the SQLite version)
+   | Variable | Value |
+   | --- | --- |
+   | `SUPABASE_URL` | `https://<ref>.supabase.co` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | the secret (`sb_secret_…`) or legacy `service_role` key; mark it *Sensitive* |
+   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | see "Google Cloud setup" |
+   | `APP_URL` | `https://<project>.vercel.app` (or your domain) |
+   | `SONA_COMPLETION_URL` | SONA's completion link with `%SURVEY_CODE%` (optional) |
+   | `SUPABASE_RECORDINGS_BUCKET` | optional, default `recordings` |
 
-1. Create the Supabase project. Apply the migrations:
-   `npx supabase link --project-ref <ref>` then `npx supabase db push`.
-2. Seed the survey tables once, from your machine:
-   `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npm run seed`.
-3. **Pause the old Space** (Settings → Pause) so nothing more is written to SQLite, and keep it
-   paused until step 4 is live; otherwise answers, sign-ins and recordings made in between are
-   lost, and their ids could collide with new rows. Then copy its data: download `/data/arena.db` and `/data/recordings/` from the running
-   Space, then
-   `npm run migrate-sqlite -- --sqlite=arena.db --recordings-dir=recordings --dry-run`
-   (prints per-table counts and anything it would skip), then the same without `--dry-run`. It
-   keeps ids, resets the identity sequences, copies the recording files into the bucket, is safe to
-   re-run, and verifies the counts at the end. The trial tables are not copied (step 2 reseeds them).
-4. Set the Space secrets above and deploy the new image.
-5. Verify: the leaderboard shows the same numbers as before, the migration script's verify step
-   passed, and a signed-in test account can play an old recording.
+   Set the Supabase variables for **Production** only unless you want preview deployments (one
+   per branch) to read and write the real database; without them, preview deployments render
+   the static pages but not the ones that need data.
+4. **Google**: add `https://<project>.vercel.app/api/auth/callback` to the OAuth client's
+   redirect URIs.
+5. **Deploy** and check: `/leaderboard?exp=2` shows the numbers, `/arena` plays clips and an
+   answer lands in `responses`, a signed-in recording plays back on `/account`, and
+   `/arena/sonasurvey` shows the consent form.
 
-The old `/data/arena.db` and `/data/recordings` can be deleted from the volume once you're satisfied.
+### Moving data from the old SQLite version
+
+Only needed if a deployment of the SQLite version collected data (`arena.db` and its recordings
+folder). Stop that deployment first so nothing more is written, then
+`npm run migrate-sqlite -- --sqlite=arena.db --recordings-dir=recordings --dry-run` (prints
+per-table counts and anything it would skip), then the same without `--dry-run`, with the
+hosted Supabase env set. It keeps ids, resets the identity sequences, copies the recording files
+into the bucket, is safe to re-run, and verifies the result. The trial tables are not copied
+(`npm run seed` loads them).
 
 ## Where things live
 
@@ -314,4 +340,5 @@ The old `/data/arena.db` and `/data/recordings` can be deleted from the volume o
 - `components/privacy-page.tsx` — the privacy policy (contains `[CONTACT NAME / EMAIL]` and `[TO BE DECIDED: …]` placeholders to fill in)
 - `lib/auth.ts` — Google OIDC (state, nonce, PKCE) and cookie sessions; `lib/current-user.ts`, `lib/request-user.ts`
 - `lib/prompts.ts`, `lib/recording-input.ts`, `lib/recordings-store.ts` — Record-tab prompts, upload checks, Storage bucket access
-- `scripts/seed.ts`, `scripts/copy-audio.ts`, `scripts/check-audio.ts`, `scripts/migrate-sqlite-to-supabase.ts`, `scripts/with-local-supabase.ts`
+- `scripts/seed.ts`, `scripts/migrate-sqlite-to-supabase.ts`, `scripts/with-local-supabase.ts`
+- `audio.lock`, `scripts/fetch-stimuli.ts`, `scripts/copy-audio.ts`, `scripts/prepare-stimuli.ts`, `lib/stimuli-manifest.ts` — the audio: pinned source, build-time copy into `public/stimuli/`, and the manifest the server reads

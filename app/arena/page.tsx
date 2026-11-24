@@ -4,7 +4,7 @@ import { getManifest } from '@/lib/clip-manifest';
 import { loadExp2Sentences } from '@/lib/stimuli';
 import type { ClipInfo } from '@/lib/clips';
 
-// Reads AUDIO_DIR at request time.
+// Reads the stimuli manifest at request time.
 export const dynamic = 'force-dynamic';
 
 export default function Page() {

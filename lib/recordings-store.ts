@@ -27,7 +27,7 @@ export interface ByteRange {
   end: number;
 }
 
-/** Parses a Range header against a body of `size` bytes, the same way app/api/audio/[file]
+/** Parses a Range header against a body of `size` bytes, the same way app/api/audio/[file] (the e2e suite's stimulus route)
  *  does: null → serve it whole (no header, or one we don't understand); 'unsatisfiable' → 416. */
 export function parseByteRange(header: string | null, size: number): ByteRange | 'unsatisfiable' | null {
   const match = header && /^bytes=(\d*)-(\d*)$/.exec(header.trim());

@@ -18,7 +18,8 @@ import {
   validateContact,
   volumeCheckClip,
 } from '../../lib/sona.ts';
-import { exp1Durations, readWavDuration } from '../../lib/sona-duration.ts';
+import { exp1Durations } from '../../lib/sona-duration.ts';
+import { buildManifest, readWavDuration } from '../../lib/stimuli-manifest.ts';
 import { toneWav, wavDurationSec } from '../../lib/wav.ts';
 import { writeTestWav } from '../fixtures/make-audio.ts';
 
@@ -95,7 +96,7 @@ test('the WAV parser reads the duration from the header', () => {
   assert.equal(wavDurationSec(toneWav(1).subarray(0, 30)), null);
 });
 
-test('durations are read from the Exp 1 WAVs on disk', () => {
+test('Exp 1 durations come from the WAV headers, via the manifest', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'sona-dur-'));
   try {
     const e1 = all.filter((c) => c.experiment === 1).slice(0, 3);
@@ -109,7 +110,9 @@ test('durations are read from the Exp 1 WAVs on disk', () => {
     writeFileSync(path.join(dir, 'junk.wav'), 'nope');
     assert.equal(readWavDuration(path.join(dir, 'junk.wav')), null);
     assert.equal(readWavDuration(path.join(dir, 'missing.wav')), null);
-    assert.deepEqual(exp1Durations(dir, [...e1, e2]), [0.5, 1, 1.5]);
+    const { manifest } = buildManifest(dir, [...e1, e2]);
+    const dur = new Map(manifest.clips.map((c) => [c.file, c.durationSec]));
+    assert.deepEqual(exp1Durations([...e1, e2], (f) => dur.get(f) ?? null), [0.5, 1, 1.5]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
