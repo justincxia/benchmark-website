@@ -1,12 +1,14 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck -- Phase 1 placeholder: still written against the old SQLite API; its Phase 2 owner ports it to lib/db and removes this line.
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { openDatabase, countRows, getExp1Counts, getExp2Counts } from '../../lib/db.ts';
+import { countRows, getExp1Counts, getExp2Counts, getSupabase, seedExp2Trials, type Exp2Trial } from '../../lib/db/index.ts';
 import { buildMetricRows } from '../../lib/metrics.ts';
 import { seedExp1, seedExp2, parseExp2Results, EXP2_HEADER } from '../../scripts/seed.ts';
+import { assertLocalSupabase, emptyTable } from '../db.ts';
+
+// This file owns exp1_trials and exp2_trials outright. Each DB test starts from empty tables,
+// and the tables are left seeded from seed/ (Exp 2 only), like `npm run seed`, at the end.
 
 const root = path.join(import.meta.dirname, '..', '..');
 const read = (p: string) => readFileSync(path.join(root, p), 'utf8');
@@ -15,32 +17,53 @@ const EXP1_STIMULI = read('seed/exp1_stimuli.csv');
 const EXP2_FIXTURE = read('tests/fixtures/exp2_results.csv');
 const EXP1_FIXTURE = read('tests/fixtures/exp1_results.csv');
 
-function metricsOf(db: ReturnType<typeof openDatabase>) {
-  return Object.fromEntries(buildMetricRows(getExp1Counts(db), getExp2Counts(db)).map((r) => [r.key, r.metrics]));
+async function emptyTrials() {
+  await emptyTable('exp1_trials');
+  await emptyTable('exp2_trials');
 }
 
-test('Exp 2: seeds trials, keeps attention checks flagged, and excludes them from metrics', () => {
-  const db = openDatabase(':memory:');
-  assert.equal(seedExp2(db, EXP2_FIXTURE, SOURCES), 6);
-  const counts = getExp2Counts(db);
+async function attentionChecks(): Promise<number> {
+  const { count, error } = await getSupabase()
+    .from('exp2_trials')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_attention_check', true);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function metrics() {
+  const [e1, e2] = await Promise.all([getExp1Counts(), getExp2Counts()]);
+  return Object.fromEntries(buildMetricRows(e1, e2).map((r) => [r.key, r.metrics]));
+}
+
+before(() => assertLocalSupabase());
+
+after(async () => {
+  await emptyTable('exp1_trials');
+  await seedExp2(read('seed/exp2_results.csv'), SOURCES, { replace: true });
+});
+
+test('Exp 2: seeds trials, keeps attention checks flagged, and excludes them from metrics', async () => {
+  await emptyTrials();
+  assert.equal(await seedExp2(EXP2_FIXTURE, SOURCES), 6);
+  const counts = await getExp2Counts();
   assert.deepEqual(Object.keys(counts).sort(), ['gemini_tts', 'human']);
   // gemini_tts: 4 trials. Interpretation answered on 3 (one NA), 2 correct.
   // Naturalness answered on 2 (3 and 4).
   assert.deepEqual(counts.gemini_tts, { trials: 4, interpN: 3, interpCorrect: 2, natN: 2, natSum: 7 });
-  const m = metricsOf(db);
+  const m = await metrics();
   assert.equal(m.gemini_tts.exp2Interp.display, '66.7%');
   assert.equal(m.gemini_tts.exp2Nat.display, '3.50');
   assert.equal(m.human.exp2Interp.display, '100.0%');
   assert.equal(m.human.exp2Nat.display, '5.00');
-  const checks = db.prepare('SELECT COUNT(*) AS c FROM exp2_trials WHERE is_attention_check = 1').get() as { c: number };
-  assert.equal(checks.c, 1);
+  assert.equal(await attentionChecks(), 1);
 });
 
-test('Exp 1: computes focus accuracy, naturalness and judged-human from the fixture', () => {
-  const db = openDatabase(':memory:');
+test('Exp 1: computes focus accuracy, naturalness and judged-human from the fixture', async () => {
+  await emptyTrials();
   // 7 data rows: the training row is dropped, the attention check is kept but flagged.
-  assert.equal(seedExp1(db, EXP1_FIXTURE, EXP1_STIMULI), 6);
-  const m = metricsOf(db);
+  assert.equal(await seedExp1(EXP1_FIXTURE, EXP1_STIMULI), 6);
+  const m = await metrics();
   // hume: melon ✓, a ✗ (answered "What happened?"), broad ✓ → 2/3. Ratings 4, 3, 4. One "Human".
   assert.equal(m.hume.exp1Focus.display, '66.7%');
   assert.equal(m.hume.exp1Nat.display, '3.67');
@@ -49,22 +72,37 @@ test('Exp 1: computes focus accuracy, naturalness and judged-human from the fixt
   assert.equal(m.elevenlabs_v4.exp1Focus.display, '0.0%');
   assert.equal(m.elevenlabs_v4.exp1Nat.display, '2.00');
   assert.equal(m.elevenlabs_v4.exp1Human.display, '0.0%');
-  assert.equal(getExp1Counts(db).elevenlabs_v4.trials, 2);
+  assert.equal((await getExp1Counts()).elevenlabs_v4.trials, 2);
   // Not in the fixture, or not in Exp 1 at all.
   assert.equal(m.grok_tts.exp1Focus.display, '—');
   assert.equal(m.human.exp1Focus.display, '—');
 });
 
-test('seeding is idempotent per table', () => {
-  const db = openDatabase(':memory:');
-  seedExp2(db, EXP2_FIXTURE, SOURCES);
-  assert.equal(seedExp2(db, EXP2_FIXTURE, SOURCES), 0);
-  assert.equal(countRows(db, 'exp2_trials'), 6);
+test('seeding is idempotent per table', async () => {
+  await emptyTrials();
+  await seedExp2(EXP2_FIXTURE, SOURCES);
+  assert.equal(await seedExp2(EXP2_FIXTURE, SOURCES), 0);
+  assert.equal(await countRows('exp2_trials'), 6);
   // Exp 1 arriving later still seeds into its own table.
-  assert.equal(seedExp1(db, EXP1_FIXTURE, EXP1_STIMULI), 6);
-  assert.equal(seedExp1(db, EXP1_FIXTURE, EXP1_STIMULI), 0);
-  assert.equal(countRows(db, 'exp1_trials'), 6);
-  assert.equal(countRows(db, 'responses'), 0);
+  assert.equal(await seedExp1(EXP1_FIXTURE, EXP1_STIMULI), 6);
+  assert.equal(await seedExp1(EXP1_FIXTURE, EXP1_STIMULI), 0);
+  assert.equal(await countRows('exp1_trials'), 6);
+  // (responses is shared with other test files, so it is not asserted empty here.)
+});
+
+test('replace empties the table first and reseeds it', async () => {
+  await emptyTrials();
+  await seedExp2(EXP2_FIXTURE, SOURCES);
+  assert.equal(await seedExp2(EXP2_FIXTURE, SOURCES, { replace: true }), 6);
+  assert.equal(await countRows('exp2_trials'), 6);
+});
+
+test('a seed the database rejects leaves no partial table', async () => {
+  await emptyTrials();
+  const good = parseExp2Results(EXP2_FIXTURE, SOURCES);
+  const bad: Exp2Trial = { ...good.find((t) => !t.isAttentionCheck)!, naturalness: 9 };
+  await assert.rejects(seedExp2Trials([...good, bad]), /seed_exp2_trials/);
+  assert.equal(await countRows('exp2_trials'), 0);
 });
 
 const exp2Row = (over: Record<string, string>) => {
@@ -113,26 +151,40 @@ test('Exp 2: hard-fails on an unparseable answer', () => {
   assert.throws(() => parseExp2Results(exp2Row({ interpretation: 'C: no' }), SOURCES), /interpretation/);
 });
 
-test('Exp 1: hard-fails on a missing or unknown column', () => {
-  assert.throws(() => seedExp1(openDatabase(':memory:'), EXP1_FIXTURE.replace('question_answered', 'answer'), EXP1_STIMULI), /missing: question_answered.*unknown: answer/);
+test('Exp 2: a seed that fails validation sends nothing', async () => {
+  await emptyTrials();
+  await assert.rejects(seedExp2(exp2Row({ provider: 'sesame' }), SOURCES), /unknown provider "sesame"/);
+  assert.equal(await countRows('exp2_trials'), 0);
 });
 
-test('Exp 1: hard-fails on Human, which was not in Exp 1', () => {
+test('Exp 1: hard-fails on a missing or unknown column', async () => {
+  await emptyTrials();
+  await assert.rejects(
+    seedExp1(EXP1_FIXTURE.replace('question_answered', 'answer'), EXP1_STIMULI),
+    /missing: question_answered.*unknown: answer/
+  );
+  assert.equal(await countRows('exp1_trials'), 0);
+});
+
+test('Exp 1: hard-fails on Human, which was not in Exp 1', async () => {
+  await emptyTrials();
   const bad = EXP1_FIXTURE.replace(',melon,hume,2,', ',melon,human,2,');
-  assert.throws(() => seedExp1(openDatabase(':memory:'), bad, EXP1_STIMULI), /not an Exp 1 model/);
+  await assert.rejects(seedExp1(bad, EXP1_STIMULI), /not an Exp 1 model/);
+  assert.equal(await countRows('exp1_trials'), 0);
 });
 
-test('Exp 1: hard-fails on an answer outside the survey options', () => {
+test('Exp 1: hard-fails on an answer outside the survey options', async () => {
+  await emptyTrials();
   const bad = EXP1_FIXTURE.replace('Human,What did Molly mail?,', 'Human,What did Molly eat?,');
-  assert.throws(() => seedExp1(openDatabase(':memory:'), bad, EXP1_STIMULI), /not a survey option/);
+  await assert.rejects(seedExp1(bad, EXP1_STIMULI), /not a survey option/);
+  assert.equal(await countRows('exp1_trials'), 0);
 });
 
-test('the real Exp 2 results seed cleanly: 244 attention checks, every provider an Exp 2 model', () => {
-  const db = openDatabase(':memory:');
-  assert.equal(seedExp2(db, read('seed/exp2_results.csv'), SOURCES), 7564);
-  const checks = db.prepare('SELECT COUNT(*) AS c FROM exp2_trials WHERE is_attention_check = 1').get() as { c: number };
-  assert.equal(checks.c, 244);
-  const counts = getExp2Counts(db);
+test('the real Exp 2 results seed cleanly: 244 attention checks, every provider an Exp 2 model', async () => {
+  await emptyTrials();
+  assert.equal(await seedExp2(read('seed/exp2_results.csv'), SOURCES), 7564);
+  assert.equal(await attentionChecks(), 244);
+  const counts = await getExp2Counts();
   assert.equal(Object.keys(counts).length, 10);
   assert.deepEqual(counts.elevenlabs, { trials: 812, interpN: 806, interpCorrect: 506, natN: 805, natSum: 2913 });
 });
