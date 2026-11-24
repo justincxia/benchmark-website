@@ -11,6 +11,12 @@ export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: 
   const rec = Number.isInteger(id) ? await getRecording(id, user.id) : null;
   if (!rec) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (!(await deleteRecording(rec.id, user.id))) return NextResponse.json({ error: 'not found' }, { status: 404 });
-  await removeRecordingFile(rec.path);
+  try {
+    await removeRecordingFile(rec.path);
+  } catch (e) {
+    // The row is gone, so the recording is deleted as far as the user can tell; the object is
+    // orphaned in the private bucket (unreachable: every read goes through the row).
+    console.error(`recording ${rec.id}: could not remove object ${rec.path}:`, e);
+  }
   return NextResponse.json({ ok: true });
 }

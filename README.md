@@ -280,7 +280,9 @@ Space *secrets*: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_CLIENT_SEC
    `npx supabase link --project-ref <ref>` then `npx supabase db push`.
 2. Seed the survey tables once, from your machine:
    `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npm run seed`.
-3. Copy the old Space's data: download `/data/arena.db` and `/data/recordings/` from the running
+3. **Pause the old Space** (Settings → Pause) so nothing more is written to SQLite, and keep it
+   paused until step 4 is live; otherwise answers, sign-ins and recordings made in between are
+   lost, and their ids could collide with new rows. Then copy its data: download `/data/arena.db` and `/data/recordings/` from the running
    Space, then
    `npm run migrate-sqlite -- --sqlite=arena.db --recordings-dir=recordings --dry-run`
    (prints per-table counts and anything it would skip), then the same without `--dry-run`. It

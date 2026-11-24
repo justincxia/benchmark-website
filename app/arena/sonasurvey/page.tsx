@@ -6,7 +6,7 @@ import { estimateMinutes } from '@/lib/sona';
 import { sonaMinutes } from '@/lib/sona-duration';
 import type { ClipInfo } from '@/lib/clips';
 
-// Reads AUDIO_DIR and SONA_COMPLETION_URL at request time.
+// Reads AUDIO_DIR at request time. (SONA_COMPLETION_URL is only ever sent by /api/sona/complete.)
 export const dynamic = 'force-dynamic';
 
 // Hidden: reached only by the link posted on SONA. Nothing on the site links here, and
@@ -33,7 +33,6 @@ export default function Page() {
         clips={clips}
         manifestError={manifestError}
         minutes={minutes}
-        completionUrl={process.env.SONA_COMPLETION_URL || null}
       />
     </PageShell>
   );

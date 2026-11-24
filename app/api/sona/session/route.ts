@@ -4,15 +4,13 @@ import { createSonaSession } from '@/lib/db';
 import { getManifest } from '@/lib/clip-manifest';
 import { buildBlock, seeded } from '@/lib/clips';
 import { normalizeSonaId, SONA_DEBUG_TRIALS, SONA_TRIALS } from '@/lib/sona';
+import { readJsonCapped } from '@/lib/sona-request';
 
 // Called once, when a participant agrees to the consent form. Writes only to sona_sessions.
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'body must be valid JSON' }, { status: 400 });
-  }
+  const parsed = await readJsonCapped(request);
+  if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+  const body = parsed.value;
   if (typeof body !== 'object' || body === null) return NextResponse.json({ error: 'body must be a JSON object' }, { status: 400 });
   const b = body as Record<string, unknown>;
 

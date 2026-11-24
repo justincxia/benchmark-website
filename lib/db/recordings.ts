@@ -51,11 +51,23 @@ export async function insertRecording(r: {
 
 /** A user's recordings, newest first (id descending). */
 export async function listRecordings(userId: number): Promise<RecordingRow[]> {
-  const res = check(
-    await getSupabase().from('recordings').select(COLUMNS).eq('user_id', userId).order('id', { ascending: false }),
-    'list recordings'
-  );
-  return ((res.data ?? []) as DbRow[]).map(toRow);
+  // Paged: PostgREST caps one response at max_rows (1000).
+  const PAGE = 1000;
+  const out: RecordingRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const res = check(
+      await getSupabase()
+        .from('recordings')
+        .select(COLUMNS)
+        .eq('user_id', userId)
+        .order('id', { ascending: false })
+        .range(from, from + PAGE - 1),
+      'list recordings'
+    );
+    const page = (res.data ?? []) as DbRow[];
+    out.push(...page.map(toRow));
+    if (page.length < PAGE) return out;
+  }
 }
 
 /** One recording, only if it belongs to `userId`. */

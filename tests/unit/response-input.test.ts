@@ -53,3 +53,8 @@ test('rejects malformed identity fields', () => {
   assert.ok('error' in validateResponseInput({ ...exp1, round: -1 }, clips));
   assert.ok('error' in validateResponseInput({ ...exp1, listenedMs: 1.5 }, clips));
 });
+
+test('listenedMs above the int4 column range is a 400-style error, not a database 500', () => {
+  assert.ok('value' in validateResponseInput({ ...exp1, listenedMs: 2_147_483_647 }, clips));
+  assert.ok('error' in validateResponseInput({ ...exp1, listenedMs: 2_147_483_648 }, clips));
+});

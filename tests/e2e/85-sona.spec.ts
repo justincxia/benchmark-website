@@ -142,7 +142,11 @@ test('a full debug run: 3 clips, contact, thank-you; saved apart from the arena'
   // and further answers are refused.
   const again = await page.request.post('/api/sona/complete', { data: { sessionId, name: 'Test Person', email: 'TEST.person@example.edu' } });
   expect(again.status()).toBe(200);
-  expect(await again.json()).toMatchObject({ duplicate: true });
+  // The SONA credit link comes back only from a completed session, filled from the stored id…
+  expect(await again.json()).toMatchObject({ duplicate: true, redirect: 'http://localhost:3100/privacy?sona_code=TEST123' });
+  // …and is never in the survey page itself, where it could be used without finishing.
+  const html = await (await page.request.get('/arena/sonasurvey')).text();
+  expect(html).not.toContain('sona_code');
   const other = await page.request.post('/api/sona/complete', { data: { sessionId, name: 'Someone Else', email: 'else@example.edu' } });
   expect(other.status()).toBe(409);
   const late = await page.request.post('/api/sona/responses', {

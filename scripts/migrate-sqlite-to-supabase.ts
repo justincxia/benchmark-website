@@ -277,9 +277,20 @@ export async function migrate(opts: MigrateOptions): Promise<MigrateResult> {
     const participants = [...new Set(pending.map((r) => String(r.participant)))];
     const want = new Map(pending.map((r) => [JSON.stringify([r.participant, r.session, r.round]), Number(r.id)]));
     for (const part of chunks(participants, 50)) {
-      const { data, error } = await sb.from('responses').select('id, participant, session, round').in('participant', part);
-      if (error) fail('read responses', error);
-      for (const r of data ?? []) {
+      // Paged: PostgREST caps one response at max_rows (1000).
+      const data: { id: number; participant: string; session: string; round: number }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const page = await sb
+          .from('responses')
+          .select('id, participant, session, round')
+          .in('participant', part)
+          .order('id')
+          .range(from, from + 999);
+        if (page.error) fail('read responses', page.error);
+        data.push(...(page.data ?? []));
+        if ((page.data ?? []).length < 1000) break;
+      }
+      for (const r of data) {
         const id = want.get(JSON.stringify([r.participant, r.session, r.round]));
         if (id !== undefined && id !== Number(r.id)) {
           conflicts.push(`responses: (${r.participant}, ${r.session}, ${r.round}) is already response ${r.id} in Supabase (source id ${id})`);

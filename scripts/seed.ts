@@ -1,5 +1,5 @@
 // Loads the human survey results into Supabase. Idempotent per table: a table that already has
-// rows is left untouched, so re-running is safe (the container runs it on every boot) and an
+// rows is left untouched, so re-running is safe (it is a one-time `npm run seed` against Supabase) and an
 // Exp 1 CSV supplied later seeds Exp 1 without touching Exp 2. Hard-fails on an unexpected
 // header, an unknown provider, or a value outside the survey's options.
 //

@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSonaSession, insertSonaResponse } from '@/lib/db';
 import { getManifest } from '@/lib/clip-manifest';
-import { validateResponseInput } from '@/lib/response-input';
+import { MAX_MS, validateResponseInput } from '@/lib/response-input';
 import { checkTrialClip, isUuid } from '@/lib/sona';
+import { readJsonCapped } from '@/lib/sona-request';
 
 // One SONA answer. Writes only to sona_responses (never the arena's `responses`).
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'body must be valid JSON' }, { status: 400 });
-  }
+  const parsed = await readJsonCapped(request);
+  if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+  const body = parsed.value;
   if (typeof body !== 'object' || body === null) return NextResponse.json({ error: 'body must be a JSON object' }, { status: 400 });
   const b = body as Record<string, unknown>;
 
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
   if (mismatch) return NextResponse.json({ error: mismatch }, { status: 400 });
 
   const rms = b.responseMs;
-  if (typeof rms !== 'number' || !Number.isInteger(rms) || rms < 0)
+  if (typeof rms !== 'number' || !Number.isInteger(rms) || rms < 0 || rms > MAX_MS)
     return NextResponse.json({ error: 'responseMs must be a non-negative integer' }, { status: 400 });
 
   let clips;

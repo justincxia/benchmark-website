@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     // The Playwright suite's build directory (NEXT_DIST_DIR in playwright.config.ts).
     ".next-test/**",
+    // Any other NEXT_DIST_DIR (e.g. .next-parity, .next-review).
+    ".next-*/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -26,6 +26,8 @@ export default defineConfig({
       AUDIO_DIR: '.test-data/audio',
       // Enables POST /api/auth/test-login (refused under NODE_ENV=production).
       AUTH_TEST_BYPASS: '1',
+      // A same-origin stand-in for the SONA credit URL (85-sona checks it is revealed only on completion).
+      SONA_COMPLETION_URL: 'http://localhost:3100/privacy?sona_code=%SURVEY_CODE%',
       // Placeholder credentials: enough to render the sign-in button and build the redirect to
       // Google; no test ever completes a real Google sign-in.
       GOOGLE_CLIENT_ID: 'test-client-id.apps.googleusercontent.com',

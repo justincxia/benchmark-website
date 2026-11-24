@@ -7,7 +7,6 @@ import { ARENA_INSTRUCTIONS } from '@/lib/arena-instructions';
 import { consentSections, SONA_CONTACT_EMAIL } from '@/lib/sona-consent';
 import {
   backoffMs,
-  completionRedirectUrl,
   SONA_PENDING_KEY,
   SONA_STATE_KEY,
   SONA_TRIALS,
@@ -30,6 +29,10 @@ interface Stored {
   stage: Stage;
   debug: boolean;
   sonaId: string | null;
+  /** Where to send the participant after the thank-you screen. Handed back by
+   *  /api/sona/complete only once the session is complete, so the SONA credit link never
+   *  appears in the page before then. */
+  redirect?: string | null;
 }
 
 /** An answer not yet confirmed saved by the server (SONA_PENDING_KEY). */
@@ -78,7 +81,8 @@ function validStored(s: unknown): s is Stored {
     v.index < v.block.length &&
     ['instructions', 'trials', 'contact', 'done'].includes(v.stage) &&
     typeof v.debug === 'boolean' &&
-    (v.sonaId === null || typeof v.sonaId === 'string')
+    (v.sonaId === null || typeof v.sonaId === 'string') &&
+    (v.redirect === undefined || v.redirect === null || typeof v.redirect === 'string')
   );
 }
 
@@ -88,14 +92,11 @@ export function SonaSurveyPage({
   clips,
   manifestError,
   minutes,
-  completionUrl,
 }: {
   clips: ClipInfo[];
   manifestError: string | null;
   /** "About N minutes" on the consent form, computed on the server from the clips' durations. */
   minutes: number;
-  /** SONA_COMPLETION_URL, with %SURVEY_CODE% for the SONA id; null when unset. */
-  completionUrl: string | null;
 }) {
   const { t } = useTheme();
   const byFile = useMemo(() => new Map(clips.map((c) => [c.file, c])), [clips]);
@@ -374,7 +375,9 @@ export function SonaSurveyPage({
               return 'Could not reach the server. Please check your connection and try again.';
             }
             if (res.ok) {
-              commit({ ...stored, stage: 'done' });
+              const done = (await res.json().catch(() => null)) as { redirect?: unknown } | null;
+              const redirect = typeof done?.redirect === 'string' ? done.redirect : null;
+              commit({ ...stored, stage: 'done', redirect });
               window.scrollTo(0, 0);
               return null;
             }
@@ -396,7 +399,7 @@ export function SonaSurveyPage({
 
   return (
     <>
-      <ThankYou redirect={completionRedirectUrl(completionUrl, stored.sonaId)} />
+      <ThankYou redirect={stored.redirect ?? null} />
       {debugBadge}
     </>
   );
