@@ -264,7 +264,7 @@ export async function seedExp1(csvText: string, stimuliText: string, opts?: { re
   return seedExp1Trials(trials, opts);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const opt = (name: string) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const seed = (f: string) => path.join(process.cwd(), 'seed', f);
@@ -283,6 +283,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const n1 = await seedExp1(readFileSync(exp1Path, 'utf8'), readFileSync(seed('exp1_stimuli.csv'), 'utf8'), { replace });
     console.log(n1 === 0 ? `Exp 1: already seeded — left untouched` : `Exp 1: seeded ${n1} rows from ${exp1Path}`);
   } else {
+    // --fresh used to delete the whole database, so a stale Exp 1 table goes too.
+    if (replace) await seedExp1Trials([], { replace });
     console.log(`Exp 1: no results CSV (${exp1Path}) — Exp 1 columns will show —`);
   }
 
@@ -299,5 +301,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
         ` | exp2: interp=${m.exp2Interp.display} (${c2 ? `${c2.interpCorrect}/${c2.interpN}` : '-'})` +
         ` nat=${m.exp2Nat.display} (${c2 ? `${c2.natSum}/${c2.natN}` : '-'})`
     );
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    await main();
+  } catch (err) {
+    console.error(`seed failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
   }
 }
