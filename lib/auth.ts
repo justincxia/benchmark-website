@@ -1,6 +1,6 @@
 // Server-only. Google sign-in (OpenID Connect, authorization code flow with state, nonce and
 // PKCE), hand-rolled with fetch against Google's documented endpoints, plus cookie sessions
-// stored in SQLite. No Next imports here, so the unit tests can exercise all of it.
+// stored in Supabase (lib/db). No Next imports here, so the unit tests can exercise all of it.
 
 import { createHash, randomBytes } from 'node:crypto';
 import { deleteSession, insertSession, userForSession, type User } from './db/index.ts';
