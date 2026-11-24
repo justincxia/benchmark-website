@@ -502,9 +502,19 @@ function Consent({
         {consentSections(minutes, SONA_TRIALS).map((s) => (
           <section key={s.title} className="mb-3.5 last:mb-0">
             <h2 className="m-0 mb-1 text-[14px] font-semibold">{s.title}</h2>
-            {s.paragraphs.map((p) => (
-              <p key={p} className="m-0 mb-1.5 last:mb-0" style={{ color: t.mutedFg }}>
-                {p}
+            {s.paragraphs.map((p, i) => (
+              <p key={i} className="m-0 mb-1.5 last:mb-0" style={{ color: t.mutedFg }}>
+                {typeof p === 'string'
+                  ? p
+                  : p.map((part, j) =>
+                      typeof part === 'string' ? (
+                        part
+                      ) : (
+                        <a key={j} href={part.href} target="_blank" rel="noopener noreferrer" className="underline">
+                          {part.text}
+                        </a>
+                      )
+                    )}
               </p>
             ))}
           </section>
@@ -679,7 +689,7 @@ function ContactForm({
         Almost done
       </h1>
       <p className="text-sm" style={{ margin: '0 0 18px', color: t.mutedFg }}>
-        Please enter your name and email address so we can [TO FILL: credit/follow-up].
+        Please enter your name and email address so we can grant your SONA credit.
       </p>
       <Card>
         <label className="mb-3 block">

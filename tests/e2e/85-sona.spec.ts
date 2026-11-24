@@ -64,7 +64,11 @@ test('declining consent sends nothing and ends on an exit screen', async ({ page
   const seen = sonaRequests(page);
   await page.goto('/arena/sonasurvey?id=NOPE');
   await expect(page.getByTestId('sona-consent')).toContainText('I am 18 or older and agree to participate');
-  await expect(page.getByTestId('sona-consent')).toContainText('[TO FILL: PI]');
+  await expect(page.getByTestId('sona-consent')).toContainText('Principal investigator: Jianjing Kuang');
+  await expect(page.getByRole('link', { name: 'Human perception of AI generated voices' })).toHaveAttribute(
+    'href',
+    'https://upenn.sona-systems.com/exp_info.aspx?experiment_id=1660'
+  );
   await expect(page.getByTestId('sona-consent')).toContainText(/About \d+ minutes\./);
   await expect(page.getByTestId('sona-agree')).toBeDisabled();
   await page.getByTestId('sona-consent-check').check();
@@ -210,7 +214,7 @@ test('a stored block that no longer matches the corpus shows an error, not a res
     )
   );
   await page.reload();
-  await expect(page.getByTestId('sona-error')).toContainText('[TO FILL: email]');
+  await expect(page.getByTestId('sona-error')).toContainText('jxia8@engineering.upenn.edu');
   await expect(page.getByTestId('sona-consent')).toHaveCount(0);
 });
 
