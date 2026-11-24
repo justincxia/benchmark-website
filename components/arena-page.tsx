@@ -5,6 +5,7 @@ import { useTheme } from '@/lib/theme';
 import type { Experiment } from '@/lib/models';
 import { buildBlock, type ClipInfo } from '@/lib/clips';
 import type { Exp2Sentence } from '@/lib/experiments';
+import { ARENA_INSTRUCTIONS } from '@/lib/arena-instructions';
 import { TrialPlayer, type TrialAnswers, type TrialTiming } from '@/components/trial-player';
 
 const PARTICIPANT_KEY = 'arena_participant';
@@ -237,16 +238,9 @@ export function ArenaPage({
         >
           <div className="mb-2 font-semibold">Instructions</div>
           <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5" style={{ color: t.mutedFg }}>
-            <li>Each round plays one recording. Play it through at least once; you can replay it.</li>
-            <li>
-              The questions come one at a time. Pick an option, then press Next. Back lets you change an earlier
-              answer, and the last question has Submit.
-            </li>
-            <li>
-              Keys: Space plays or pauses the clip, the number or letter beside an option picks it, and Enter moves
-              on.
-            </li>
-            <li>We recommend a quiet space with headphones.</li>
+            {ARENA_INSTRUCTIONS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
           </ul>
         </div>
 

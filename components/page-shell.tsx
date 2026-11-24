@@ -9,6 +9,7 @@ export function PageShell({
   fullBleed = false,
   compact = false,
   background,
+  hideSubNav = false,
 }: {
   children: ReactNode;
   maxWidth?: string;
@@ -19,10 +20,13 @@ export function PageShell({
   /** Decoration fixed behind the whole page. The page's content is drawn over it, so it
    *  shows only where nothing opaque covers it. */
   background?: ReactNode;
+  /** Leave out the sub-nav (Leaderboard / Arena / Record): a page reached only by direct link
+   *  that should not lead elsewhere (the SONA survey). The header and footer stay. */
+  hideSubNav?: boolean;
 }) {
   const content = (
     <>
-      <SubNav />
+      {!hideSubNav && <SubNav />}
       {fullBleed ? (
         <main className="flex-1">{children}</main>
       ) : (

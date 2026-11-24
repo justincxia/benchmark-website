@@ -6,7 +6,8 @@ lets visitors take the survey trials themselves in an arena. Every displayed num
 from the seeded survey data in Supabase Postgres; arena submissions go to a separate `responses`
 table that no page reads.
 
-Pages: `/` (an intro), `/leaderboard`, `/arena`, `/record`, `/account` and `/privacy`. The sub-nav
+Pages: `/` (an intro), `/leaderboard`, `/arena`, `/record`, `/account` and `/privacy` (plus the
+hidden `/arena/sonasurvey`; see "SONA survey"). The sub-nav
 has Leaderboard, Arena and Record. The leaderboard shows one experiment at a time (`?exp=1` or
 `?exp=2`; the old `/experiment-1` and `/experiment-2` addresses redirect there): its results table,
 bar charts drawn from the same numbers, the acoustic plots, and example clips, with every
@@ -144,6 +145,46 @@ emphasized word as the clip plays. (The reference site used fake bars for exactl
 reason.) With `prefers-reduced-motion`, or where Web Audio is unavailable, the graphic is a
 plain progress bar.
 
+## SONA survey
+
+`/arena/sonasurvey` is the arena's Experiment 1 as a one-time study for SONA participants. It is
+**hidden**: nothing on the site links to it (the sub-nav is left off the page; header and footer
+stay), the page sets `<meta name="robots" content="noindex, nofollow">`, `next.config.ts` adds
+`X-Robots-Tag: noindex, nofollow` for the route, and it is not listed in any robots.txt (which
+would advertise it). Post the link on SONA as `…/arena/sonasurvey?id=%SURVEY_CODE%`.
+
+Everything happens on the one URL: **consent** (`lib/sona-consent.ts`, with `[TO FILL: …]`
+placeholders to complete before posting; "about N minutes" is the mean duration of the Exp 1
+WAVs, read from their headers, × 50 + 15 s per clip, rounded up — about 15) → **instructions**
+(the arena's) and an **audio check** (a fixed Exp 2 human recording, never one of the trials; a
+generated tone if there is none) → **50 clips** (one take of every Exp 1 model × focus
+condition, shuffled; the arena's play screen, "Clip N of 50" and a progress bar; Back only
+within a clip) → **name and email** → **thank-you**. Declining consent sends nothing.
+
+- `POST /api/sona/session` (on consent) draws the block on the server from a random seed (503
+  unless it has exactly 50 clips) and stores it with the `?id=` (capped at 100 chars) and the
+  user agent in `sona_sessions`.
+- `POST /api/sona/responses` saves one answer to `sona_responses` (404 unknown session, 409
+  completed, 400 unless the clip is the block's clip at that `trialIndex`; the answer itself goes
+  through the arena's `validateResponseInput`). A repeat is 200 `{duplicate: true}`. The page
+  keeps unsaved answers in localStorage (`sona_pending`) and retries them with exponential
+  backoff (0.5 s doubling to 30 s), showing "Saving…".
+- `POST /api/sona/complete` stores the name and email in `sona_contacts` (apart from the answers)
+  and sets `completed_at`, only once every trial of the block has an answer (409 otherwise). A
+  repeat with the same contact returns 200 `{duplicate: true}`; a different contact is 409.
+- Progress lives in localStorage (`sona_state`, never the arena's keys), so a reload resumes at
+  the same clip. If a stored clip has left the corpus, the page shows an error with the contact
+  email instead of restarting.
+- `SONA_COMPLETION_URL` (optional, server env): after the thank-you screen the participant is
+  sent there, with `%SURVEY_CODE%` replaced by their URL-encoded SONA id (only if the link had an
+  `?id=`).
+- **Debug:** `?debug=1` outside `NODE_ENV=production` stores `debug = true` and keeps only the
+  first 3 clips of the (still validated) 50-clip block; the page shows the session id in a corner
+  badge and counts "of 3". Ignored in production. Filter debug sessions out of any analysis.
+
+The arena and the leaderboard never read or write the `sona_*` tables, and the survey never
+touches `responses` or the trial tables.
+
 ## Run
 
 ```bash
@@ -212,8 +253,9 @@ re-applied, seeded from `seed/`), writes short tone fixture stimuli to `.test-da
 its own dev server on port 3100 with a separate build directory (`.next-test`), so it runs
 alongside `npm run dev` (which shares the local database, so expect it to be reset). The fixture stimuli are a tone that is quiet, then loud, which the arena's loudness-meter test relies on. It asserts the leaderboard's Exp 2 numbers exactly, the arena flow (start screen, one question at a time, Back, Submit gating, keys, fits one screen at 1280×800 and 375×667, loudness bars), the intro page (steps, links, reduced motion, 375px, no console errors, no requests to other hosts), the footer link on every page, the column sorting, that an
 arena submission adds exactly one `responses` row, reveals nothing, and leaves the survey
-tables unchanged; the cog menu; `/account` signed out and in; and recording upload, listing,
-playback access control and delete. Exp 1 metrics are covered by the unit tests via
+tables unchanged; the cog menu; `/account` signed out and in; recording upload, listing,
+playback access control and delete; and the SONA survey (declining sends nothing, a full `?debug=1`
+run to `completed_at`, resume on reload, save retries, 375×667, hidden/noindex, arena untouched). Exp 1 metrics are covered by the unit tests via
 `tests/fixtures/exp1_results.csv`.
 
 Signing in under test uses `POST /api/auth/test-login`, which exists only when
@@ -262,6 +304,7 @@ The old `/data/arena.db` and `/data/recordings` can be deleted from the volume o
 - `lib/metrics.ts` — counts → displayed metrics, half-up rounding, sorting
 - `lib/stimuli.ts`, `lib/clips.ts`, `lib/clip-manifest.ts` — stimulus lists, arena blocks, the audio allowlist
 - `lib/response-input.ts` — arena submission validation (ground truth from the clip)
+- `components/sona-survey-page.tsx`, `lib/sona.ts`, `lib/sona-consent.ts`, `lib/sona-duration.ts`, `lib/wav.ts`, `app/api/sona/` — the hidden SONA survey
 - `components/arena-page.tsx`, `lib/loudness.ts` — the arena (start screen, question picker) and its Web Audio loudness meter
 - `lib/theme.tsx` — light/dark tokens applied through inline styles, not Tailwind dark mode (not persisted)
 - `components/site-header.tsx` — site name, account icon, cog preferences menu (`PREFERENCES` rows)
