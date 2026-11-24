@@ -15,7 +15,8 @@
     "db:reset": "supabase db reset && node scripts/with-local-supabase.ts node --disable-warning=ExperimentalWarning --conditions=react-server scripts/seed.ts",
     "test:unit": "node scripts/with-local-supabase.ts node --disable-warning=ExperimentalWarning --conditions=react-server --test --test-concurrency=1 \"tests/unit/*.test.ts\"",
     "test:e2e": "node scripts/with-local-supabase.ts playwright test",
-    "test": "npm run test:unit && npm run test:e2e"
+    "test": "npm run test:unit && npm run test:e2e",
+    "migrate-sqlite": "node --disable-warning=ExperimentalWarning --conditions=react-server scripts/migrate-sqlite-to-supabase.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { DB_PATH, rowOrder } from './helpers';
-import { DatabaseSync } from 'node:sqlite';
+import { db, rowOrder } from './helpers';
 
 const EXP1_LIST_ORDER = [
   'elevenlabs', 'elevenlabs_v4', 'gemini_tts', 'gemini_live', 'openai_tts', 'openai_sts',
@@ -45,20 +44,33 @@ test('every metric header is a sort control, and the sort resets when the experi
 });
 
 // Accuracy per model over a set of sentences, straight from the seeded table, formatted like the app.
-function accuracyOver(conditions: string[]): Record<string, string> {
-  const db = new DatabaseSync(DB_PATH, { readOnly: true, timeout: 5000 });
-  try {
-    const rows = db
-      .prepare(
-        `SELECT provider, COUNT(interpretation) AS n, SUM(interpretation = intended_interpretation) AS k
-         FROM exp2_trials WHERE is_attention_check = 0 AND condition IN (${conditions.map(() => '?').join(',')})
-         GROUP BY provider`
-      )
-      .all(...conditions) as { provider: string; n: number; k: number }[];
-    return Object.fromEntries(rows.map((r) => [r.provider, (Math.round((r.k * 1000) / r.n) / 10).toFixed(1) + '%']));
-  } finally {
-    db.close();
+async function accuracyOver(conditions: string[]): Promise<Record<string, string>> {
+  // Read the raw rows (PostgREST caps a response at 1000 rows, so page through them) and count
+  // here, independently of the views the app reads.
+  type Row = { provider: string; interpretation: string | null; intended_interpretation: string };
+  const rows: Row[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db()
+      .from('exp2_trials')
+      .select('provider, interpretation, intended_interpretation')
+      .eq('is_attention_check', false)
+      .in('condition', conditions)
+      .order('id')
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(data as Row[]));
+    if (data.length < 1000) break;
   }
+  const acc: Record<string, { n: number; k: number }> = {};
+  for (const r of rows as { provider: string; interpretation: string | null; intended_interpretation: string }[]) {
+    if (r.interpretation === null) continue;
+    const a = (acc[r.provider] ??= { n: 0, k: 0 });
+    a.n += 1;
+    if (r.interpretation === r.intended_interpretation) a.k += 1;
+  }
+  return Object.fromEntries(
+    Object.entries(acc).map(([p, { n, k }]) => [p, (Math.round((k * 1000) / n) / 10).toFixed(1) + '%'])
+  );
 }
 
 const SENTENCES = ['servant_actress', 'lisa_telescope', 'mirror_hallway', 'old_men_women', 'knife_towel_box'];
@@ -80,7 +92,7 @@ test('the Sentences dropdown beside Interpretation accuracy picks which sentence
   await page.getByTestId('sentence-check-lisa_telescope').uncheck();
   await page.getByTestId('sentence-check-knife_towel_box').uncheck();
   await expect(filter).toHaveText(/3 of 5 sentences/);
-  const three = accuracyOver(['servant_actress', 'mirror_hallway', 'old_men_women']);
+  const three = await accuracyOver(['servant_actress', 'mirror_hallway', 'old_men_women']);
   expect(Object.keys(three)).toHaveLength(10);
   for (const [model, pct] of Object.entries(three)) {
     await expect(page.getByTestId(`lb-${model}-exp2Interp`)).toHaveText(pct);
@@ -100,7 +112,7 @@ test('the Sentences dropdown beside Interpretation accuracy picks which sentence
   await page.getByTestId('sentence-check-mirror_hallway').uncheck();
   await expect(filter).toHaveText(/1 of 5 sentences/);
   await expect(page.getByTestId('sentence-check-old_men_women')).toBeDisabled();
-  await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText(accuracyOver(['old_men_women']).human);
+  await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText((await accuracyOver(['old_men_women'])).human);
 
   // Check all restores the full numbers; Escape closes the menu.
   await page.getByTestId('sentence-all').click();

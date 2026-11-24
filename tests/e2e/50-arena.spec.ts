@@ -72,7 +72,7 @@ test('the start screen has the instructions, the mode choice and Play now; Play 
 });
 
 test('questions come one at a time: Next needs a pick, Back keeps the answer and lets it change, Submit is last', async ({ page }) => {
-  const before = { r: countRows('responses'), e1: countRows('exp1_trials'), e2: countRows('exp2_trials') };
+  const before = { r: await countRows('responses'), e1: await countRows('exp1_trials'), e2: await countRows('exp2_trials') };
   await openArena(page, 1);
   const file = await servedClip(page);
   await playThrough(page);
@@ -144,12 +144,12 @@ test('questions come one at a time: Next needs a pick, Back keeps the answer and
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
   await expect(page.getByTestId('arena-next')).toBeVisible();
   await expect(page.getByTestId('arena-question')).toHaveCount(0);
-  expect(countRows('responses')).toBe(before.r + 1);
-  expect(countRows('exp1_trials')).toBe(before.e1);
-  expect(countRows('exp2_trials')).toBe(before.e2);
+  expect(await countRows('responses')).toBe(before.r + 1);
+  expect(await countRows('exp1_trials')).toBe(before.e1);
+  expect(await countRows('exp2_trials')).toBe(before.e2);
 
   // The row holds the changed answers, and the truth comes from the clip, not the page.
-  const row = latestResponse();
+  const row = await latestResponse();
   expect(row.clip).toBe(file);
   expect(row.experiment).toBe(1);
   const condition = /_focus_(broad|molly|mailed|a|melon)_\d+\.wav$/.exec(file)![1];
@@ -171,7 +171,7 @@ test('questions come one at a time: Next needs a pick, Back keeps the answer and
 });
 
 test('Experiment 2: the sentence screen comes first; two questions; a submission adds one row and reveals nothing', async ({ page }) => {
-  const before = { r: countRows('responses'), e1: countRows('exp1_trials'), e2: countRows('exp2_trials') };
+  const before = { r: await countRows('responses'), e1: await countRows('exp1_trials'), e2: await countRows('exp2_trials') };
   await page.goto('/arena');
   await page.getByTestId('arena-mode-2').click();
   await page.getByTestId('arena-play-now').click();
@@ -203,11 +203,11 @@ test('Experiment 2: the sentence screen comes first; two questions; a submission
   await page.getByTestId('arena-submit').click();
 
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  expect(countRows('responses')).toBe(before.r + 1);
-  expect(countRows('exp1_trials')).toBe(before.e1);
-  expect(countRows('exp2_trials')).toBe(before.e2);
+  expect(await countRows('responses')).toBe(before.r + 1);
+  expect(await countRows('exp1_trials')).toBe(before.e1);
+  expect(await countRows('exp2_trials')).toBe(before.e2);
 
-  const row = latestResponse();
+  const row = await latestResponse();
   expect(row.clip).toBe(file);
   expect(row.experiment).toBe(2);
   expect(row.interpretation).toBe('B');
@@ -228,11 +228,11 @@ test('Submit stays disabled until the clip has played through', async ({ page })
   await page.getByTestId('arena-q-0').click();
   await expect(page.getByTestId('arena-submit')).toBeDisabled();
   await expect(page.getByTestId('arena-hint')).toHaveText('Play the clip to submit.');
-  const before = countRows('responses');
+  const before = await countRows('responses');
   await page.getByTestId('arena-submit').click({ force: true });
   await page.keyboard.press('Enter');
   await page.waitForTimeout(500);
-  expect(countRows('responses')).toBe(before);
+  expect(await countRows('responses')).toBe(before);
   await expect(page.getByTestId('arena-recorded')).toHaveCount(0);
 
   // Playing it through unlocks Submit, with the answers still in place.
@@ -241,13 +241,13 @@ test('Submit stays disabled until the clip has played through', async ({ page })
   await expect(page.getByTestId('arena-submit')).toBeEnabled();
   await page.getByTestId('arena-submit').click();
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  expect(countRows('responses')).toBe(before + 1);
+  expect(await countRows('responses')).toBe(before + 1);
 });
 
 test('the keyboard: a row\'s key picks it, Enter is Next and Submit, Space plays the clip', async ({ page }) => {
   await openArena(page, 1);
   await servedClip(page);
-  const before = countRows('responses');
+  const before = await countRows('responses');
   await page.keyboard.press('Enter'); // nothing picked: stays
   await expect(step(page)).toHaveText('1 of 3');
   await page.keyboard.press('5');
@@ -264,8 +264,8 @@ test('the keyboard: a row\'s key picks it, Enter is Next and Submit, Space plays
   await expect(page.getByTestId('arena-clip')).toHaveAttribute('data-completed', 'true', { timeout: 15_000 });
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  expect(countRows('responses')).toBe(before + 1);
-  const row = latestResponse();
+  expect(await countRows('responses')).toBe(before + 1);
+  const row = await latestResponse();
   expect(row.naturalness).toBe(5);
   expect(row.human_or_ai).toBe('Human');
   expect(row.question_answered).toBe('What did Molly do with the melon?');
@@ -290,7 +290,7 @@ test('a reload resumes the block at the same clip, and Next clip advances it', a
 
   await answerExp1(page);
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  const answered = latestResponse();
+  const answered = await latestResponse();
   await page.getByTestId('arena-next').click();
   const second = await servedClip(page);
   expect(second).not.toBe(first);
@@ -299,7 +299,7 @@ test('a reload resumes the block at the same clip, and Next clip advances it', a
 
   await answerExp1(page);
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  const nextRow = latestResponse();
+  const nextRow = await latestResponse();
   expect(nextRow.participant).toBe(answered.participant);
   expect(nextRow.session).toBe(answered.session);
   expect(nextRow.round).toBe(Number(answered.round) + 1);
@@ -308,10 +308,10 @@ test('a reload resumes the block at the same clip, and Next clip advances it', a
 test('a reload after submitting shows the recorded state, not a fresh form, and adds no row', async ({ page }) => {
   await openArena(page, 1);
   const file = await servedClip(page);
-  const before = countRows('responses');
+  const before = await countRows('responses');
   await answerExp1(page);
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  expect(countRows('responses')).toBe(before + 1);
+  expect(await countRows('responses')).toBe(before + 1);
 
   await page.reload();
   expect(await servedClip(page)).toBe(file);
@@ -320,7 +320,7 @@ test('a reload after submitting shows the recorded state, not a fresh form, and 
   await expect(page.getByTestId('arena-question')).toHaveCount(0);
   await expect(page.getByTestId('arena-submit')).toHaveCount(0);
   await page.waitForTimeout(500);
-  expect(countRows('responses')).toBe(before + 1);
+  expect(await countRows('responses')).toBe(before + 1);
   await assertNothingRevealed(page);
 
   // Next clip still moves on to a fresh round.
@@ -473,10 +473,10 @@ test('with reduced motion the clip graphic is a plain progress bar, and the roun
   await servedClip(page);
   await expect(page.getByTestId('arena-meter')).toHaveAttribute('data-mode', 'progress');
   await expect(page.getByTestId('arena-bar')).toHaveCount(0);
-  const before = countRows('responses');
+  const before = await countRows('responses');
   await answerExp1(page);
   await expect(page.getByTestId('arena-recorded')).toHaveText('Response recorded');
-  expect(countRows('responses')).toBe(before + 1);
+  expect(await countRows('responses')).toBe(before + 1);
   expect(errors).toEqual([]);
 });
 

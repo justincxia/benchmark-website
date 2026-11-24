@@ -53,14 +53,21 @@ export function PrivacyPage() {
         </p>
         <p>
           <b>Voice recordings (optional, signed in only).</b> If you record yourself on the Record page and
-          press Save, we store the audio file on our server, along with which sentence and reading it was
-          for, its file type and size, and when you saved it. Recordings you make but do not save never leave
+          press Save, we store the audio file in private file storage, along with which sentence and reading
+          it was for, its file type and size, and when you saved it. Recordings you make but do not save never leave
           your browser.
         </p>
         <p>
-          We do not store your IP address. The service that hosts this site may keep its own standard
-          server logs, which we do not control. [TO BE DECIDED: name the hosting provider and link its
+          <b>Where it is stored.</b> Everything above (arena answers, account details, session records and
+          voice recordings) is stored with Supabase, a database and file-storage provider, in a private
+          project that only this site&apos;s server can read or write; your browser never connects to it
+          directly. [TO BE DECIDED: the Supabase project&apos;s hosting region, and a link to Supabase&apos;s
           privacy policy.]
+        </p>
+        <p>
+          We do not store your IP address. The services that host this site and its database may keep their
+          own standard server logs, which we do not control. [TO BE DECIDED: name the site&apos;s hosting
+          provider and link its privacy policy.]
         </p>
       </Section>
 
@@ -68,7 +75,7 @@ export function PrivacyPage() {
         <p>
           <b>Session cookie.</b> When you sign in, we set one cookie, <code>pb_session</code>, holding a random
           token that keeps you signed in for 30 days or until you sign out. It cannot be read by scripts on the
-          page, and we store only a scrambled (hashed) form of it on our server. Signing out deletes the
+          page, and we store only a scrambled (hashed) form of it in our database. Signing out deletes the
           session on our side and removes the cookie. While you are signing in, a second cookie,{' '}
           <code>pb_oauth</code>, holds security values for the sign-in step for up to 10 minutes.
         </p>
@@ -100,8 +107,8 @@ export function PrivacyPage() {
           <Link href="/account" style={{ color: t.fg }}>
             Account
           </Link>{' '}
-          page; no other user can see or play them. The research team can access all stored data on the
-          server. We do not sell or share the data with anyone else. [TO BE DECIDED: any other people or
+          page; no other user can see or play them. The research team can access all stored data in the
+          database. We do not sell or share the data with anyone else. [TO BE DECIDED: any other people or
           institutions who will have access, e.g. collaborators.]
         </p>
       </Section>
@@ -119,7 +126,7 @@ export function PrivacyPage() {
           <Link href="/account" style={{ color: t.fg }}>
             Account
           </Link>{' '}
-          page; this removes both the audio file and its details from our server. To have your account
+          page; this removes both the audio file and its details from our storage. To have your account
           (name, email and Google account ID) deleted, or to ask about anything else we hold, contact{' '}
           {CONTACT}. Because arena answers are anonymous, we can only find yours if you give us the
           participant ID stored in your browser. [TO BE DECIDED: how a participant can look up their

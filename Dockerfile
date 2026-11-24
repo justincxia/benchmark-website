@@ -1,6 +1,8 @@
-# HuggingFace Docker Space. Needs the persistent-storage add-on (mounted at /data) and the
-# Space variable DATABASE_PATH=/data/arena.db. Upload the stimuli to /data/audio with the
-# tts-sts-audio layout (e.g. by running `npm run copy-audio` locally and uploading data/audio).
+# HuggingFace Docker Space. Data (survey trials, arena responses, accounts, recordings) lives in
+# Supabase: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (and optionally SUPABASE_RECORDINGS_BUCKET)
+# as Space *secrets*. Seeding is a one-time `npm run seed` against Supabase, not done on boot.
+# The stimuli still need the persistent-storage add-on (mounted at /data): upload them to
+# /data/audio with the tts-sts-audio layout (e.g. `npm run copy-audio` locally, then upload).
 FROM node:26-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -20,12 +22,9 @@ COPY --from=builder --chown=user /app/public ./public
 COPY --from=builder --chown=user /app/lib ./lib
 COPY --from=builder --chown=user /app/scripts ./scripts
 COPY --from=builder --chown=user /app/seed ./seed
-RUN mkdir -p /app/data && chown user:user /app/data
 USER user
-# Stimuli are not in the image; like the database they live on the persistent volume.
+# Stimuli are not in the image; they live on the persistent volume.
 ENV AUDIO_DIR=/data/audio
-ENV DATABASE_PATH=/data/arena.db
-ENV RECORDINGS_DIR=/data/recordings
 EXPOSE 7860
-# Refuse to start without stimuli, seed if empty (a no-op on a populated database), then serve.
-CMD ["sh", "-c", "node scripts/check-audio.ts && node scripts/seed.ts && npx next start -p 7860"]
+# Refuse to start without stimuli, then serve.
+CMD ["sh", "-c", "node scripts/check-audio.ts && npx next start -p 7860"]

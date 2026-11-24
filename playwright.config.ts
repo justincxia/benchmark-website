@@ -17,14 +17,13 @@ export default defineConfig({
     // empty) and seeded from the real seed/ CSVs (no Exp 1 results), served by a dev server with
     // its own build dir so `npm run dev` can keep running. `npm run test:e2e` puts the local
     // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY in the environment, which the server inherits.
-    command: `rm -rf .test-data/recordings && ${N} tests/fixtures/make-audio.ts .test-data/audio && npm run db:reset && next dev -p 3100`,
+    command: `${N} tests/fixtures/make-audio.ts .test-data/audio && npm run db:reset && next dev -p 3100`,
     url: 'http://localhost:3100/leaderboard',
     reuseExistingServer: false,
     timeout: 180_000,
     env: {
       NEXT_DIST_DIR: '.next-test',
       AUDIO_DIR: '.test-data/audio',
-      RECORDINGS_DIR: '.test-data/recordings',
       // Enables POST /api/auth/test-login (refused under NODE_ENV=production).
       AUTH_TEST_BYPASS: '1',
       // Placeholder credentials: enough to render the sign-in button and build the redirect to

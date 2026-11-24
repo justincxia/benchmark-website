@@ -158,7 +158,7 @@ declare n integer;
 begin
   lock table public.exp1_trials in exclusive mode;
   if p_replace then
-    delete from public.exp1_trials;
+    delete from public.exp1_trials where true;  -- PostgREST preloads safeupdate
   elsif exists (select 1 from public.exp1_trials) then
     return 0;
   end if;
@@ -179,7 +179,7 @@ declare n integer;
 begin
   lock table public.exp2_trials in exclusive mode;
   if p_replace then
-    delete from public.exp2_trials;
+    delete from public.exp2_trials where true;  -- PostgREST preloads safeupdate
   elsif exists (select 1 from public.exp2_trials) then
     return 0;
   end if;

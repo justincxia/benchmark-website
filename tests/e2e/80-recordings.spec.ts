@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { countRows, query, signIn } from './helpers';
+import { countRows, recordingById, recordingObjectExists, recordingsOf, signIn, userIdBySub } from './helpers';
 
 async function recordAndSave(page: Page, promptId: string) {
   await page.getByTestId(`rec-start-${promptId}`).click();
@@ -27,7 +26,7 @@ test('signed in, /record lists the 5 Exp 1 and 10 Exp 2 prompts with their cues'
 
 test('record, re-record, save; it appears on /account, plays for its owner only, and deletes', async ({ page, browser }) => {
   test.setTimeout(90_000); // several first-compiled routes under the dev server
-  const survey = { e1: countRows('exp1_trials'), e2: countRows('exp2_trials'), r: countRows('responses') };
+  const survey = { e1: await countRows('exp1_trials'), e2: await countRows('exp2_trials'), r: await countRows('responses') };
   await signIn(page, 'carol', 'Carol');
   await page.goto('/record');
 
@@ -45,14 +44,14 @@ test('record, re-record, save; it appears on /account, plays for its owner only,
   await expect(page.getByTestId(`rec-status-${id}`)).toHaveText('Saved');
   await recordAndSave(page, 'exp2-mirror_hallway-a');
 
-  const carol = query<{ id: number }>("SELECT id FROM users WHERE google_sub = 'test:carol'").id;
-  expect(query<{ n: number }>(`SELECT COUNT(*) AS n FROM recordings WHERE user_id = ${carol}`).n).toBe(2);
-  const rec = query<{ id: number; path: string; mime: string; prompt_id: string }>(
-    `SELECT id, path, mime, prompt_id FROM recordings WHERE user_id = ${carol} AND prompt_id = '${id}'`
-  );
+  const carol = await userIdBySub('test:carol');
+  const carolRecs = await recordingsOf(carol);
+  expect(carolRecs).toHaveLength(2);
+  const rec = carolRecs.find((r) => r.prompt_id === id)!;
   expect(rec.mime).toMatch(/^audio\//);
-  const file = path.join('.test-data/recordings', rec.path);
-  expect(existsSync(file)).toBe(true);
+  // The audio is an object in the private Storage bucket, keyed <userId>/<uuid>.<ext>.
+  expect(rec.path.startsWith(`${carol}/`)).toBe(true);
+  expect(await recordingObjectExists(rec.path)).toBe(true);
   expect(path.basename(rec.path)).toMatch(/^[0-9a-f-]{36}\.\w+$/);
 
   // The list: newest first, with experiment, sentence, condition and a player.
@@ -69,6 +68,12 @@ test('record, re-record, save; it appears on /account, plays for its owner only,
   const own = await page.request.get(`/api/recordings/${rec.id}/audio`);
   expect(own.status()).toBe(200);
   expect(own.headers()['content-type']).toBe(rec.mime);
+  expect(own.headers()['accept-ranges']).toBe('bytes');
+  // Streamed from Storage with Range passed through (Safari needs it to play media).
+  const part = await page.request.get(`/api/recordings/${rec.id}/audio`, { headers: { Range: 'bytes=0-9' } });
+  expect(part.status()).toBe(206);
+  expect(part.headers()['content-range']).toMatch(/^bytes 0-9\/\d+$/);
+  expect((await part.body()).length).toBe(10);
   const other = await browser.newContext();
   const otherPage = await other.newPage();
   expect((await otherPage.request.get(`http://localhost:3100/api/recordings/${rec.id}/audio`)).status()).toBe(404);
@@ -87,13 +92,13 @@ test('record, re-record, save; it appears on /account, plays for its owner only,
   await page.getByTestId(`recording-delete-${rec.id}`).click();
   await expect(page.getByTestId(`recording-${rec.id}`)).toHaveCount(0);
   await expect(page.getByTestId('recordings-list').locator('> div')).toHaveCount(1);
-  expect(existsSync(file)).toBe(false);
+  expect(await recordingObjectExists(rec.path)).toBe(false);
   expect((await page.request.get(`/api/recordings/${rec.id}/audio`)).status()).toBe(404);
 
   // Recordings never touch the survey tables or the arena's responses.
-  expect(countRows('exp1_trials')).toBe(survey.e1);
-  expect(countRows('exp2_trials')).toBe(survey.e2);
-  expect(countRows('responses')).toBe(survey.r);
+  expect(await countRows('exp1_trials')).toBe(survey.e1);
+  expect(await countRows('exp2_trials')).toBe(survey.e2);
+  expect(await countRows('responses')).toBe(survey.r);
 });
 
 test('the upload API checks session, prompt, content type and size', async ({ page, request }) => {
@@ -110,7 +115,7 @@ test('the upload API checks session, prompt, content type and size', async ({ pa
   const ok = await post('exp2-servant_actress-b', 'audio/wav', audio);
   expect(ok.status()).toBe(201);
   const { id } = (await ok.json()) as { id: number };
-  const row = query<{ path: string; experiment: number }>(`SELECT path, experiment FROM recordings WHERE id = ${id}`);
+  const row = await recordingById(id);
   expect(row.experiment).toBe(2);
   expect(row.path).toMatch(/^\d+\/[0-9a-f-]{36}\.wav$/);
 });
