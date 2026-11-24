@@ -49,15 +49,9 @@ export async function insertExp2Trial(r: Exp2Trial): Promise<void> {
 
 async function seedVia(table: 'exp1_trials' | 'exp2_trials', rows: object[], replace: boolean): Promise<number> {
   const fn = `seed_${table}` as const;
-  if (replace) {
-    // The RPC's own p_replace runs `delete from <table>` with no WHERE, which pg_safeupdate
-    // (preloaded for PostgREST's authenticator role) rejects with "DELETE requires a WHERE
-    // clause". Until the migration says `delete … where true`, empty the table here (a filtered
-    // delete passes) and let the RPC insert into the now-empty table. Not one transaction: a
-    // failed insert after this leaves the table empty, never partially filled.
-    check(await getSupabase().from(table).delete().not('id', 'is', null), `empty ${table}`);
-  }
-  const res = check(await getSupabase().rpc(fn, { p_rows: rows, p_replace: false }), fn);
+  // One transaction in the RPC: with p_replace it empties the table first, else it inserts only
+  // into an empty table.
+  const res = check(await getSupabase().rpc(fn, { p_rows: rows, p_replace: replace }), fn);
   const n = Number(res.data);
   if (!Number.isInteger(n)) throw new Error(`${fn}: unexpected result ${JSON.stringify(res.data)}`);
   return n;
