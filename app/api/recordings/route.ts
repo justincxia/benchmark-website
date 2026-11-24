@@ -48,19 +48,24 @@ export async function POST(request: NextRequest) {
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status });
 
   const { prompt, mime } = result.value;
-  const rel = saveRecordingFile(user.id, mime, bytes!);
+  let key: string;
+  try {
+    key = await saveRecordingFile(user.id, mime, bytes!);
+  } catch {
+    return NextResponse.json({ error: 'could not save recording' }, { status: 500 });
+  }
   try {
     const id = await insertRecording({
       userId: user.id,
       experiment: prompt.experiment,
       promptId: prompt.id,
       mime,
-      path: rel,
+      path: key,
       size,
     });
     return NextResponse.json({ ok: true, id }, { status: 201 });
   } catch {
-    removeRecordingFile(rel);
+    await removeRecordingFile(key).catch(() => {});
     return NextResponse.json({ error: 'could not save recording' }, { status: 500 });
   }
 }
