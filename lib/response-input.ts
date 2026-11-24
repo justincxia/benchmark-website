@@ -5,13 +5,16 @@
 
 import { QUESTION_OPTIONS } from './experiments.ts';
 import { intendedInterpretationOf, intendedQuestionOf, type Clip } from './clips.ts';
-import type { ResponseRecord } from './db.ts';
+import type { ResponseRecord } from './db/types.ts';
 
 const MAX_ROUND = 100_000;
 
 function nonEmpty(v: unknown): v is string {
   return typeof v === 'string' && v.trim() !== '' && v.length <= 200;
 }
+
+/** listened_ms is a Postgres integer (int4); a larger value is a bad request, not a 500. */
+export const MAX_MS = 2_147_483_647;
 
 export function validateResponseInput(
   body: unknown,
@@ -32,7 +35,7 @@ export function validateResponseInput(
   const nat = b.naturalness;
   if (typeof nat !== 'number' || !Number.isInteger(nat) || nat < 1 || nat > 5)
     return { error: 'naturalness must be an integer from 1 to 5' };
-  if (typeof b.listenedMs !== 'number' || !Number.isInteger(b.listenedMs) || b.listenedMs < 0)
+  if (typeof b.listenedMs !== 'number' || !Number.isInteger(b.listenedMs) || b.listenedMs < 0 || b.listenedMs > MAX_MS)
     return { error: 'listenedMs must be a non-negative integer' };
 
   const base = {

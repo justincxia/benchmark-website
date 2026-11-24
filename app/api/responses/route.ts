@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb, insertResponse } from '@/lib/db';
+import { insertResponse } from '@/lib/db';
 import { getManifest } from '@/lib/clip-manifest';
 import { validateResponseInput } from '@/lib/response-input';
 
@@ -21,10 +21,14 @@ export async function POST(request: Request) {
 
   const result = validateResponseInput(body, clips);
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
+  let inserted: boolean;
   try {
-    insertResponse(getDb(), result.value);
+    inserted = await insertResponse(result.value);
   } catch {
     return NextResponse.json({ error: 'could not save response' }, { status: 500 });
   }
+  // A repeat of an already-recorded round (e.g. resubmitted after a reload) is not an error:
+  // the round is recorded, just not twice.
+  if (!inserted) return NextResponse.json({ ok: true, duplicate: true }, { status: 200 });
   return NextResponse.json({ ok: true }, { status: 201 });
 }

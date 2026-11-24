@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMetricRows, formatMean, formatPct, sortRows, DASH, DEFAULT_SORT } from '../../lib/metrics.ts';
-import type { Exp1Counts, Exp2Counts } from '../../lib/db.ts';
+import { buildMetricRows, formatMean, formatPct, sortRows, defaultSortKey, hasData, metricsFor, withInterpSentences, DASH } from '../../lib/metrics.ts';
+import type { Exp1Counts, Exp2Counts } from '../../lib/db/types.ts';
 import { MODELS } from '../../lib/models.ts';
 
 test('formatMean rounds half-up to two decimals', () => {
@@ -64,6 +64,47 @@ test('sorting is descending, models without a value last, ties in list order', (
   assert.deepEqual(sorted.slice(3), rest);
 });
 
-test('the default sort is Exp 1 focus accuracy', () => {
-  assert.equal(DEFAULT_SORT, 'exp1Focus');
+test('each experiment has its own columns', () => {
+  assert.deepEqual(metricsFor(1), ['exp1Focus', 'exp1Nat', 'exp1Human']);
+  assert.deepEqual(metricsFor(2), ['exp2Interp', 'exp2Nat']);
+});
+
+test('the default sort is the first column that has data', () => {
+  // Exp 1 has only naturalness; Exp 2 has only interpretation accuracy.
+  const rows = buildMetricRows({ hume: e1({ natN: 2, natSum: 7 }) }, { hume: e2({ interpN: 10, interpCorrect: 5 }) });
+  assert.equal(hasData(rows, 'exp1Focus'), false);
+  assert.equal(hasData(rows, 'exp1Nat'), true);
+  assert.equal(defaultSortKey(rows, metricsFor(1)), 'exp1Nat');
+  assert.equal(defaultSortKey(rows, metricsFor(2)), 'exp2Interp');
+  assert.equal(defaultSortKey(rows, ['exp1Focus', 'exp1Human', 'exp2Nat', 'exp2Interp']), 'exp2Interp');
+});
+
+test('with no data anywhere the default sort is the first column', () => {
+  const rows = buildMetricRows({}, {});
+  assert.equal(defaultSortKey(rows, metricsFor(1)), 'exp1Focus');
+});
+
+test('withInterpSentences recomputes accuracy over the chosen sentences only', () => {
+  const rows = buildMetricRows(
+    {},
+    { hume: e2({ interpN: 30, interpCorrect: 18, natN: 30, natSum: 90 }), human: e2({ interpN: 10, interpCorrect: 7 }) }
+  );
+  const by = {
+    hume: { s1: { n: 10, correct: 9 }, s2: { n: 10, correct: 6 }, s3: { n: 10, correct: 3 } },
+    human: { s1: { n: 10, correct: 7 } },
+  };
+  const get = (r: typeof rows, key: string) => r.find((x) => x.key === key)!.metrics;
+
+  const one = withInterpSentences(rows, by, ['s1']);
+  assert.equal(get(one, 'hume').exp2Interp.display, '90.0%');
+  assert.equal(get(one, 'human').exp2Interp.display, '70.0%');
+  assert.equal(get(one, 'hume').exp2Nat.display, '3.00'); // naturalness is not filtered
+
+  const two = withInterpSentences(rows, by, ['s2', 's3']);
+  assert.equal(get(two, 'hume').exp2Interp.display, '45.0%');
+  // Human has no trials for those sentences; a model outside Exp 2 stays —.
+  assert.equal(get(two, 'human').exp2Interp.display, DASH);
+  assert.equal(get(two, 'elevenlabs_v4').exp2Interp.display, DASH);
+
+  assert.equal(get(withInterpSentences(rows, by, ['s1', 's2', 's3']), 'hume').exp2Interp.display, '60.0%');
 });

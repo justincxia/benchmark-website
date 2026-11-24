@@ -17,7 +17,7 @@ export default function Page() {
     manifestError = e instanceof Error ? e.message : 'Stimuli unavailable';
   }
   return (
-    <PageShell maxWidth="640px">
+    <PageShell maxWidth="640px" compact>
       <ArenaPage clips={clips} sentences={loadExp2Sentences()} manifestError={manifestError} />
     </PageShell>
   );

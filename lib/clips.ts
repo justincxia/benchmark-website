@@ -98,24 +98,3 @@ export function buildBlock<T extends ClipInfo>(clips: T[], experiment: Experimen
   const order = shuffle([...bySentence.keys()].sort(), rnd);
   return order.flatMap((s) => shuffle(bySentence.get(s)!, rnd));
 }
-
-function hashFile(file: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < file.length; i++) {
-    h ^= file.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-/**
- * 48 decorative waveform-bar heights, stable for a given filename. Deliberately synthetic:
- * real peak data would show the accented word and let a listener answer by looking.
- */
-export function clipBars(file: string): number[] {
-  const rnd = seeded((hashFile(file) % 65535) + 1);
-  return Array.from({ length: 48 }, (_, k) => {
-    const env = Math.sin((k / 48) * Math.PI);
-    return 0.16 + env * (0.35 + rnd() * 0.55);
-  });
-}

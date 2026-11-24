@@ -1,32 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTheme } from '@/lib/theme';
 import { MONO } from '@/lib/mono';
-import { METRICS, sortRows, type MetricKey, type MetricRow } from '@/lib/metrics';
+import { METRICS, defaultSortKey, sortRows, type MetricKey, type MetricRow } from '@/lib/metrics';
 
 /**
- * The results table shared by the leaderboard and the two experiment pages: one row per
- * model, one column per metric. With `sortable`, each metric header sorts descending by it.
+ * The leaderboard's results table: one row per model, one column per metric. Each metric
+ * header sorts descending by it. It opens sorted by the first column that has data.
  */
 export function MetricTable({
   rows,
   columns,
-  sortable = false,
-  defaultSort,
+  headerExtras,
   testId,
+  nameLabel = 'Model',
 }: {
+  /** Header of the first column. */
+  nameLabel?: string;
   rows: MetricRow[];
   columns: MetricKey[];
-  sortable?: boolean;
-  defaultSort?: MetricKey;
+  /** A control shown beside a column's label (for example a filter for that column). */
+  headerExtras?: Partial<Record<MetricKey, ReactNode>>;
   testId: string;
 }) {
   const { t } = useTheme();
-  const [sortKey, setSortKey] = useState<MetricKey | null>(defaultSort ?? null);
-  const shown = sortable && sortKey ? sortRows(rows, sortKey) : rows;
-  const grid = `minmax(190px,1.6fr) repeat(${columns.length}, minmax(120px,1fr))`;
-  const minWidth = 190 + columns.length * 120 + 44;
+  const [sortKey, setSortKey] = useState<MetricKey>(() => defaultSortKey(rows, columns));
+  const shown = sortRows(rows, sortKey);
+  const grid = `minmax(190px,1.6fr) repeat(${columns.length}, minmax(${headerExtras ? 150 : 120}px,1fr))`;
+  const minWidth = 190 + columns.length * (headerExtras ? 150 : 120) + 44;
 
   return (
     <div
@@ -38,13 +40,12 @@ export function MetricTable({
           className="grid items-center px-[22px] py-[11px] text-xs font-medium"
           style={{ gridTemplateColumns: grid, background: t.muted, borderBottom: `1px solid ${t.border}`, color: t.mutedFg }}
         >
-          <div>Model</div>
+          <div>{nameLabel}</div>
           {columns.map((key) => {
             const label = METRICS.find((m) => m.key === key)!.label;
-            const active = sortable && sortKey === key;
-            return sortable ? (
+            const active = sortKey === key;
+            const sort = (
               <button
-                key={key}
                 type="button"
                 data-testid={`sort-${key}`}
                 aria-pressed={active}
@@ -57,9 +58,11 @@ export function MetricTable({
                   ↓
                 </span>
               </button>
-            ) : (
-              <div key={key} className="text-right">
-                {label}
+            );
+            return (
+              <div key={key} className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                {sort}
+                {headerExtras?.[key]}
               </div>
             );
           })}

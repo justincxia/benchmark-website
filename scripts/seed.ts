@@ -1,5 +1,5 @@
-// Loads the human survey results into SQLite. Idempotent per table: a table that already has
-// rows is left untouched, so re-running is safe (the container runs it on every boot) and an
+// Loads the human survey results into Supabase. Idempotent per table: a table that already has
+// rows is left untouched, so re-running is safe (it is a one-time `npm run seed` against Supabase) and an
 // Exp 1 CSV supplied later seeds Exp 1 without touching Exp 2. Hard-fails on an unexpected
 // header, an unknown provider, or a value outside the survey's options.
 //
@@ -8,10 +8,9 @@
 // Exp 2 defaults to seed/exp2_results.csv. Exp 1 defaults to seed/exp1_results.csv and is
 // skipped (its columns show —) when that file does not exist.
 
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { DatabaseSync } from 'node:sqlite';
 import { parseCsvRecords } from '../lib/csv.ts';
 import { modelByKey } from '../lib/models.ts';
 import {
@@ -21,16 +20,13 @@ import {
   isExp2Condition,
 } from '../lib/experiments.ts';
 import {
-  countRows,
-  defaultDbPath,
   getExp1Counts,
   getExp2Counts,
-  insertExp1Trial,
-  insertExp2Trial,
-  openDatabase,
+  seedExp1Trials,
+  seedExp2Trials,
   type Exp1Trial,
   type Exp2Trial,
-} from '../lib/db.ts';
+} from '../lib/db/index.ts';
 import { exp1ClipsFromCsv, exp2ClipsFromCsv } from '../lib/stimuli.ts';
 import type { Clip } from '../lib/clips.ts';
 import { buildMetricRows } from '../lib/metrics.ts';
@@ -256,59 +252,45 @@ export function parseExp1Results(text: string, stimuliText: string): Exp1Trial[]
 
 // ---------------- seeding ----------------
 
-function inTransaction(db: DatabaseSync, fn: () => void) {
-  db.exec('BEGIN');
-  try {
-    fn();
-    db.exec('COMMIT');
-  } catch (err) {
-    db.exec('ROLLBACK');
-    throw err;
-  }
-}
-
-/** Returns rows inserted; 0 when the table was already populated. */
-export function seedExp2(db: DatabaseSync, csvText: string, sourcesText: string): number {
-  if (countRows(db, 'exp2_trials') > 0) return 0;
+/** Returns rows inserted; 0 when the table was already populated. Parsing (and every
+ *  validation) happens before anything is sent, and the insert is one all-or-nothing call. */
+export async function seedExp2(csvText: string, sourcesText: string, opts?: { replace?: boolean }): Promise<number> {
   const trials = parseExp2Results(csvText, sourcesText);
-  inTransaction(db, () => trials.forEach((t) => insertExp2Trial(db, t)));
-  return trials.length;
+  return seedExp2Trials(trials, opts);
 }
 
-export function seedExp1(db: DatabaseSync, csvText: string, stimuliText: string): number {
-  if (countRows(db, 'exp1_trials') > 0) return 0;
+export async function seedExp1(csvText: string, stimuliText: string, opts?: { replace?: boolean }): Promise<number> {
   const trials = parseExp1Results(csvText, stimuliText);
-  inTransaction(db, () => trials.forEach((t) => insertExp1Trial(db, t)));
-  return trials.length;
+  return seedExp1Trials(trials, opts);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const opt = (name: string) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const seed = (f: string) => path.join(process.cwd(), 'seed', f);
 
-  const dbPath = defaultDbPath();
-  if (args.includes('--fresh') && dbPath !== ':memory:') rmSync(dbPath, { force: true });
-  const db = openDatabase(dbPath);
+  // --fresh replaces the trial tables' rows (never responses, users or recordings).
+  const replace = args.includes('--fresh');
 
   const exp2Path = opt('exp2') ?? seed('exp2_results.csv');
-  const n2 = seedExp2(db, readFileSync(exp2Path, 'utf8'), readFileSync(seed('exp2_audio_sources.csv'), 'utf8'));
+  const n2 = await seedExp2(readFileSync(exp2Path, 'utf8'), readFileSync(seed('exp2_audio_sources.csv'), 'utf8'), { replace });
   console.log(n2 === 0 ? `Exp 2: already seeded — left untouched` : `Exp 2: seeded ${n2} rows from ${exp2Path}`);
 
   const exp1Arg = opt('exp1');
   if (exp1Arg && !existsSync(exp1Arg)) throw new Error(`Exp 1 results CSV not found: ${exp1Arg}`);
   const exp1Path = exp1Arg ?? seed('exp1_results.csv');
   if (existsSync(exp1Path)) {
-    const n1 = seedExp1(db, readFileSync(exp1Path, 'utf8'), readFileSync(seed('exp1_stimuli.csv'), 'utf8'));
+    const n1 = await seedExp1(readFileSync(exp1Path, 'utf8'), readFileSync(seed('exp1_stimuli.csv'), 'utf8'), { replace });
     console.log(n1 === 0 ? `Exp 1: already seeded — left untouched` : `Exp 1: seeded ${n1} rows from ${exp1Path}`);
   } else {
+    // --fresh used to delete the whole database, so a stale Exp 1 table goes too.
+    if (replace) await seedExp1Trials([], { replace });
     console.log(`Exp 1: no results CSV (${exp1Path}) — Exp 1 columns will show —`);
   }
 
-  console.log(`Database: ${dbPath}`);
-  const rows = buildMetricRows(getExp1Counts(db), getExp2Counts(db));
-  const e2 = getExp2Counts(db);
-  const e1 = getExp1Counts(db);
+  console.log(`Database: ${process.env.SUPABASE_URL}`);
+  const [e1, e2] = await Promise.all([getExp1Counts(), getExp2Counts()]);
+  const rows = buildMetricRows(e1, e2);
   for (const r of rows) {
     const m = r.metrics;
     const c2 = e2[r.key];
@@ -319,5 +301,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
         ` | exp2: interp=${m.exp2Interp.display} (${c2 ? `${c2.interpCorrect}/${c2.interpN}` : '-'})` +
         ` nat=${m.exp2Nat.display} (${c2 ? `${c2.natSum}/${c2.natN}` : '-'})`
     );
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    await main();
+  } catch (err) {
+    console.error(`seed failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
   }
 }

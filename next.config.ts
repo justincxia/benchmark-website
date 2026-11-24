@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   // Playwright suite's server refuses to start while a dev server is running. Giving the
   // test server its own directory lets both run at once without disabling the lock.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // The SONA survey is reached only by its study link: keep it out of search engines (the page
+  // also sets a robots meta tag). Not listed in any robots.txt, which would advertise it.
+  async headers() {
+    return [{ source: "/arena/sonasurvey", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+  },
+  // The two experiments used to be their own pages; they are now views of the leaderboard.
+  async redirects() {
+    return [
+      { source: "/experiment-1", destination: "/leaderboard?exp=1", permanent: false },
+      { source: "/experiment-2", destination: "/leaderboard?exp=2", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

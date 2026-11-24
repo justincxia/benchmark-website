@@ -6,9 +6,8 @@ import { useTheme } from '@/lib/theme';
 
 const TABS = [
   { label: 'Leaderboard', href: '/leaderboard' },
-  { label: 'Experiment 1', href: '/experiment-1' },
-  { label: 'Experiment 2', href: '/experiment-2' },
   { label: 'Arena', href: '/arena' },
+  { label: 'Record', href: '/record' },
 ];
 
 export function SubNav() {

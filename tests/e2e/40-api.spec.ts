@@ -23,7 +23,7 @@ test('audio: anything outside the manifest is a 404', async ({ request }) => {
 });
 
 test('responses: ground truth comes from the clip, not the request body', async ({ request }) => {
-  const before = countRows('responses');
+  const before = await countRows('responses');
   const res = await request.post('/api/responses', {
     data: {
       participant: 'api-test', session: 's1', round: 0, clip: 'nova_sonic_focus_mailed_4.wav',
@@ -32,8 +32,8 @@ test('responses: ground truth comes from the clip, not the request body', async 
     },
   });
   expect(res.status()).toBe(201);
-  expect(countRows('responses')).toBe(before + 1);
-  const row = latestResponse();
+  expect(await countRows('responses')).toBe(before + 1);
+  const row = await latestResponse();
   expect(row.model).toBe('nova_sts');
   expect(row.condition).toBe('mailed');
   expect(row.take).toBe(4);
@@ -42,12 +42,26 @@ test('responses: ground truth comes from the clip, not the request body', async 
 });
 
 test('responses: invalid submissions are rejected and write nothing', async ({ request }) => {
-  const before = countRows('responses');
+  const before = await countRows('responses');
   const bad = [
     { participant: 'x', session: 's', round: 0, clip: 'unknown.wav', naturalness: 3, interpretation: 'A', listenedMs: 1 },
     { participant: 'x', session: 's', round: 0, clip: 'lisa_a_1.wav', naturalness: 7, interpretation: 'A', listenedMs: 1 },
     { participant: 'x', session: 's', round: 0, clip: 'lisa_a_1.wav', naturalness: 3, humanOrAi: 'AI', listenedMs: 1 },
   ];
   for (const data of bad) expect((await request.post('/api/responses', { data })).status()).toBe(400);
-  expect(countRows('responses')).toBe(before);
+  expect(await countRows('responses')).toBe(before);
+});
+
+test('responses: a repeated POST for the same participant/session/round adds no row', async ({ request }) => {
+  const data = {
+    participant: 'api-dup', session: 'dup-session', round: 3, clip: 'lisa_a_1.wav',
+    naturalness: 3, interpretation: 'A', listenedMs: 300,
+  };
+  const first = await request.post('/api/responses', { data });
+  expect(first.status()).toBe(201);
+  const before = await countRows('responses');
+  const again = await request.post('/api/responses', { data: { ...data, naturalness: 5, interpretation: 'B' } });
+  expect(again.status()).toBe(200);
+  expect(await again.json()).toEqual({ ok: true, duplicate: true });
+  expect(await countRows('responses')).toBe(before);
 });

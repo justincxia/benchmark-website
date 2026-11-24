@@ -1,0 +1,632 @@
+{
+  "_note": "Parity oracle captured from the SQLite data layer before the Supabase migration. \"seed\" = npm run seed on seed/ (no Exp 1 results); \"seedWithExp1Fixture\" adds tests/fixtures/exp1_results.csv.",
+  "seed": {
+    "rowCounts": {
+      "exp1_trials": 0,
+      "exp2_trials": 7564,
+      "responses": 0,
+      "users": 0,
+      "sessions": 0,
+      "recordings": 0
+    },
+    "exp1Counts": {},
+    "exp2Counts": {
+      "elevenlabs": {
+        "trials": 812,
+        "interpN": 806,
+        "interpCorrect": 506,
+        "natN": 805,
+        "natSum": 2913
+      },
+      "gemini_live": {
+        "trials": 809,
+        "interpN": 805,
+        "interpCorrect": 418,
+        "natN": 804,
+        "natSum": 2424
+      },
+      "gemini_tts": {
+        "trials": 809,
+        "interpN": 804,
+        "interpCorrect": 457,
+        "natN": 804,
+        "natSum": 2404
+      },
+      "grok_sts": {
+        "trials": 563,
+        "interpN": 558,
+        "interpCorrect": 264,
+        "natN": 558,
+        "natSum": 2041
+      },
+      "grok_tts": {
+        "trials": 564,
+        "interpN": 560,
+        "interpCorrect": 357,
+        "natN": 560,
+        "natSum": 1979
+      },
+      "human": {
+        "trials": 808,
+        "interpN": 807,
+        "interpCorrect": 564,
+        "natN": 807,
+        "natSum": 2900
+      },
+      "hume": {
+        "trials": 823,
+        "interpN": 819,
+        "interpCorrect": 511,
+        "natN": 819,
+        "natSum": 2541
+      },
+      "nova_sts": {
+        "trials": 548,
+        "interpN": 545,
+        "interpCorrect": 269,
+        "natN": 545,
+        "natSum": 1826
+      },
+      "openai_sts": {
+        "trials": 806,
+        "interpN": 801,
+        "interpCorrect": 442,
+        "natN": 801,
+        "natSum": 2580
+      },
+      "openai_tts": {
+        "trials": 778,
+        "interpN": 773,
+        "interpCorrect": 416,
+        "natN": 773,
+        "natSum": 2457
+      }
+    },
+    "exp2InterpBySentence": {
+      "elevenlabs": {
+        "knife_towel_box": {
+          "n": 164,
+          "correct": 86
+        },
+        "lisa_telescope": {
+          "n": 149,
+          "correct": 104
+        },
+        "mirror_hallway": {
+          "n": 165,
+          "correct": 102
+        },
+        "old_men_women": {
+          "n": 165,
+          "correct": 122
+        },
+        "servant_actress": {
+          "n": 163,
+          "correct": 92
+        }
+      },
+      "gemini_live": {
+        "knife_towel_box": {
+          "n": 170,
+          "correct": 84
+        },
+        "lisa_telescope": {
+          "n": 159,
+          "correct": 84
+        },
+        "mirror_hallway": {
+          "n": 157,
+          "correct": 77
+        },
+        "old_men_women": {
+          "n": 155,
+          "correct": 73
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 100
+        }
+      },
+      "gemini_tts": {
+        "knife_towel_box": {
+          "n": 148,
+          "correct": 88
+        },
+        "lisa_telescope": {
+          "n": 168,
+          "correct": 84
+        },
+        "mirror_hallway": {
+          "n": 166,
+          "correct": 83
+        },
+        "old_men_women": {
+          "n": 158,
+          "correct": 101
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 101
+        }
+      },
+      "grok_sts": {
+        "knife_towel_box": {
+          "n": 120,
+          "correct": 54
+        },
+        "lisa_telescope": {
+          "n": 124,
+          "correct": 64
+        },
+        "mirror_hallway": {
+          "n": 104,
+          "correct": 54
+        },
+        "old_men_women": {
+          "n": 103,
+          "correct": 44
+        },
+        "servant_actress": {
+          "n": 107,
+          "correct": 48
+        }
+      },
+      "grok_tts": {
+        "knife_towel_box": {
+          "n": 107,
+          "correct": 59
+        },
+        "lisa_telescope": {
+          "n": 117,
+          "correct": 79
+        },
+        "mirror_hallway": {
+          "n": 111,
+          "correct": 66
+        },
+        "old_men_women": {
+          "n": 115,
+          "correct": 73
+        },
+        "servant_actress": {
+          "n": 110,
+          "correct": 80
+        }
+      },
+      "human": {
+        "knife_towel_box": {
+          "n": 161,
+          "correct": 124
+        },
+        "lisa_telescope": {
+          "n": 159,
+          "correct": 108
+        },
+        "mirror_hallway": {
+          "n": 168,
+          "correct": 110
+        },
+        "old_men_women": {
+          "n": 155,
+          "correct": 118
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 104
+        }
+      },
+      "hume": {
+        "knife_towel_box": {
+          "n": 158,
+          "correct": 93
+        },
+        "lisa_telescope": {
+          "n": 161,
+          "correct": 98
+        },
+        "mirror_hallway": {
+          "n": 158,
+          "correct": 99
+        },
+        "old_men_women": {
+          "n": 169,
+          "correct": 111
+        },
+        "servant_actress": {
+          "n": 173,
+          "correct": 110
+        }
+      },
+      "nova_sts": {
+        "knife_towel_box": {
+          "n": 115,
+          "correct": 59
+        },
+        "lisa_telescope": {
+          "n": 104,
+          "correct": 44
+        },
+        "mirror_hallway": {
+          "n": 106,
+          "correct": 54
+        },
+        "old_men_women": {
+          "n": 116,
+          "correct": 57
+        },
+        "servant_actress": {
+          "n": 104,
+          "correct": 55
+        }
+      },
+      "openai_sts": {
+        "knife_towel_box": {
+          "n": 157,
+          "correct": 83
+        },
+        "lisa_telescope": {
+          "n": 174,
+          "correct": 82
+        },
+        "mirror_hallway": {
+          "n": 155,
+          "correct": 73
+        },
+        "old_men_women": {
+          "n": 154,
+          "correct": 123
+        },
+        "servant_actress": {
+          "n": 161,
+          "correct": 81
+        }
+      },
+      "openai_tts": {
+        "knife_towel_box": {
+          "n": 153,
+          "correct": 88
+        },
+        "lisa_telescope": {
+          "n": 136,
+          "correct": 80
+        },
+        "mirror_hallway": {
+          "n": 167,
+          "correct": 79
+        },
+        "old_men_women": {
+          "n": 170,
+          "correct": 89
+        },
+        "servant_actress": {
+          "n": 147,
+          "correct": 80
+        }
+      }
+    }
+  },
+  "seedWithExp1Fixture": {
+    "rowCounts": {
+      "exp1_trials": 6,
+      "exp2_trials": 7564,
+      "responses": 0,
+      "users": 0,
+      "sessions": 0,
+      "recordings": 0
+    },
+    "exp1Counts": {
+      "elevenlabs_v4": {
+        "trials": 2,
+        "focusN": 1,
+        "focusCorrect": 0,
+        "natN": 1,
+        "natSum": 2,
+        "humanAiN": 1,
+        "judgedHuman": 0
+      },
+      "hume": {
+        "trials": 3,
+        "focusN": 3,
+        "focusCorrect": 2,
+        "natN": 3,
+        "natSum": 11,
+        "humanAiN": 3,
+        "judgedHuman": 1
+      }
+    },
+    "exp2Counts": {
+      "elevenlabs": {
+        "trials": 812,
+        "interpN": 806,
+        "interpCorrect": 506,
+        "natN": 805,
+        "natSum": 2913
+      },
+      "gemini_live": {
+        "trials": 809,
+        "interpN": 805,
+        "interpCorrect": 418,
+        "natN": 804,
+        "natSum": 2424
+      },
+      "gemini_tts": {
+        "trials": 809,
+        "interpN": 804,
+        "interpCorrect": 457,
+        "natN": 804,
+        "natSum": 2404
+      },
+      "grok_sts": {
+        "trials": 563,
+        "interpN": 558,
+        "interpCorrect": 264,
+        "natN": 558,
+        "natSum": 2041
+      },
+      "grok_tts": {
+        "trials": 564,
+        "interpN": 560,
+        "interpCorrect": 357,
+        "natN": 560,
+        "natSum": 1979
+      },
+      "human": {
+        "trials": 808,
+        "interpN": 807,
+        "interpCorrect": 564,
+        "natN": 807,
+        "natSum": 2900
+      },
+      "hume": {
+        "trials": 823,
+        "interpN": 819,
+        "interpCorrect": 511,
+        "natN": 819,
+        "natSum": 2541
+      },
+      "nova_sts": {
+        "trials": 548,
+        "interpN": 545,
+        "interpCorrect": 269,
+        "natN": 545,
+        "natSum": 1826
+      },
+      "openai_sts": {
+        "trials": 806,
+        "interpN": 801,
+        "interpCorrect": 442,
+        "natN": 801,
+        "natSum": 2580
+      },
+      "openai_tts": {
+        "trials": 778,
+        "interpN": 773,
+        "interpCorrect": 416,
+        "natN": 773,
+        "natSum": 2457
+      }
+    },
+    "exp2InterpBySentence": {
+      "elevenlabs": {
+        "knife_towel_box": {
+          "n": 164,
+          "correct": 86
+        },
+        "lisa_telescope": {
+          "n": 149,
+          "correct": 104
+        },
+        "mirror_hallway": {
+          "n": 165,
+          "correct": 102
+        },
+        "old_men_women": {
+          "n": 165,
+          "correct": 122
+        },
+        "servant_actress": {
+          "n": 163,
+          "correct": 92
+        }
+      },
+      "gemini_live": {
+        "knife_towel_box": {
+          "n": 170,
+          "correct": 84
+        },
+        "lisa_telescope": {
+          "n": 159,
+          "correct": 84
+        },
+        "mirror_hallway": {
+          "n": 157,
+          "correct": 77
+        },
+        "old_men_women": {
+          "n": 155,
+          "correct": 73
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 100
+        }
+      },
+      "gemini_tts": {
+        "knife_towel_box": {
+          "n": 148,
+          "correct": 88
+        },
+        "lisa_telescope": {
+          "n": 168,
+          "correct": 84
+        },
+        "mirror_hallway": {
+          "n": 166,
+          "correct": 83
+        },
+        "old_men_women": {
+          "n": 158,
+          "correct": 101
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 101
+        }
+      },
+      "grok_sts": {
+        "knife_towel_box": {
+          "n": 120,
+          "correct": 54
+        },
+        "lisa_telescope": {
+          "n": 124,
+          "correct": 64
+        },
+        "mirror_hallway": {
+          "n": 104,
+          "correct": 54
+        },
+        "old_men_women": {
+          "n": 103,
+          "correct": 44
+        },
+        "servant_actress": {
+          "n": 107,
+          "correct": 48
+        }
+      },
+      "grok_tts": {
+        "knife_towel_box": {
+          "n": 107,
+          "correct": 59
+        },
+        "lisa_telescope": {
+          "n": 117,
+          "correct": 79
+        },
+        "mirror_hallway": {
+          "n": 111,
+          "correct": 66
+        },
+        "old_men_women": {
+          "n": 115,
+          "correct": 73
+        },
+        "servant_actress": {
+          "n": 110,
+          "correct": 80
+        }
+      },
+      "human": {
+        "knife_towel_box": {
+          "n": 161,
+          "correct": 124
+        },
+        "lisa_telescope": {
+          "n": 159,
+          "correct": 108
+        },
+        "mirror_hallway": {
+          "n": 168,
+          "correct": 110
+        },
+        "old_men_women": {
+          "n": 155,
+          "correct": 118
+        },
+        "servant_actress": {
+          "n": 164,
+          "correct": 104
+        }
+      },
+      "hume": {
+        "knife_towel_box": {
+          "n": 158,
+          "correct": 93
+        },
+        "lisa_telescope": {
+          "n": 161,
+          "correct": 98
+        },
+        "mirror_hallway": {
+          "n": 158,
+          "correct": 99
+        },
+        "old_men_women": {
+          "n": 169,
+          "correct": 111
+        },
+        "servant_actress": {
+          "n": 173,
+          "correct": 110
+        }
+      },
+      "nova_sts": {
+        "knife_towel_box": {
+          "n": 115,
+          "correct": 59
+        },
+        "lisa_telescope": {
+          "n": 104,
+          "correct": 44
+        },
+        "mirror_hallway": {
+          "n": 106,
+          "correct": 54
+        },
+        "old_men_women": {
+          "n": 116,
+          "correct": 57
+        },
+        "servant_actress": {
+          "n": 104,
+          "correct": 55
+        }
+      },
+      "openai_sts": {
+        "knife_towel_box": {
+          "n": 157,
+          "correct": 83
+        },
+        "lisa_telescope": {
+          "n": 174,
+          "correct": 82
+        },
+        "mirror_hallway": {
+          "n": 155,
+          "correct": 73
+        },
+        "old_men_women": {
+          "n": 154,
+          "correct": 123
+        },
+        "servant_actress": {
+          "n": 161,
+          "correct": 81
+        }
+      },
+      "openai_tts": {
+        "knife_towel_box": {
+          "n": 153,
+          "correct": 88
+        },
+        "lisa_telescope": {
+          "n": 136,
+          "correct": 80
+        },
+        "mirror_hallway": {
+          "n": 167,
+          "correct": 79
+        },
+        "old_men_women": {
+          "n": 170,
+          "correct": 89
+        },
+        "servant_actress": {
+          "n": 147,
+          "correct": 80
+        }
+      }
+    }
+  }
+}

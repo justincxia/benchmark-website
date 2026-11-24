@@ -1,21 +1,21 @@
 import { test, expect } from '@playwright/test';
-import { rowOrder } from './helpers';
 
-test('/ redirects to /leaderboard', async ({ page }) => {
+test('/ is the intro page, not a redirect', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveURL(/\/leaderboard$/);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId('intro')).toBeVisible();
 });
 
-test('sub-nav tabs are Leaderboard, Experiment 1, Experiment 2, Arena, in that order', async ({ page }) => {
+test('sub-nav tabs are Leaderboard, Arena, Record, in that order', async ({ page }) => {
   await page.goto('/leaderboard');
-  await expect(page.locator('nav a')).toHaveText(['Leaderboard', 'Experiment 1', 'Experiment 2', 'Arena']);
+  await expect(page.locator('nav a')).toHaveText(['Leaderboard', 'Arena', 'Record']);
 });
 
-test('all four pages render', async ({ page }) => {
+test('the leaderboard and arena render', async ({ page }) => {
   for (const [path, heading] of [
     ['/leaderboard', 'Leaderboard'],
-    ['/experiment-1', 'Experiment 1: Focus'],
-    ['/experiment-2', 'Experiment 2: Ambiguity'],
+    ['/leaderboard?exp=1', 'Leaderboard'],
+    ['/leaderboard?exp=2', 'Leaderboard'],
     ['/arena', 'Arena'],
   ]) {
     const res = await page.goto(path);
@@ -25,27 +25,23 @@ test('all four pages render', async ({ page }) => {
   }
 });
 
-test('Experiment 1: one row per Exp 1 model with the three Exp 1 columns, and an example per model', async ({ page }) => {
+test('the old experiment addresses lead to the matching leaderboard view', async ({ page }) => {
   await page.goto('/experiment-1');
-  const rows = await rowOrder(page, 'exp1');
-  expect(rows).toHaveLength(10);
-  expect(rows).not.toContain('human');
-  await expect(page.locator('[data-testid^="exp1-"][data-testid$="-exp1Focus"]')).toHaveCount(10);
-  await expect(page.locator('[data-testid$="-exp2Interp"]')).toHaveCount(0);
-  await expect(page.locator('[data-testid^="example-"]')).toHaveCount(10);
-  await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute('src', '/api/audio/hume_focus_broad_1.wav');
-  await expect(page.locator('body')).toContainText('has not been collected yet');
+  await expect(page).toHaveURL(/\/leaderboard\?exp=1$/);
+  await expect(page.locator('h2').first()).toHaveText('Experiment 1: Focus');
+  await page.goto('/experiment-2');
+  await expect(page).toHaveURL(/\/leaderboard\?exp=2$/);
+  await expect(page.locator('h2').first()).toHaveText('Experiment 2: Ambiguity');
 });
 
-test('Experiment 2: one row per Exp 2 model with the two Exp 2 columns, and an example per model', async ({ page }) => {
-  await page.goto('/experiment-2');
-  const rows = await rowOrder(page, 'exp2');
-  expect(rows).toHaveLength(10);
-  expect(rows).not.toContain('elevenlabs_v4');
-  await expect(page.getByTestId('exp2-human-exp2Interp')).toHaveText('69.9%');
-  await expect(page.getByTestId('exp2-human-exp2Nat')).toHaveText('3.59');
-  await expect(page.locator('[data-testid$="-exp1Focus"]')).toHaveCount(0);
-  await expect(page.getByTestId('exp2-sentences')).toContainText('The servant of the actress who was crying left.');
+test('Experiment 1: an example clip per model', async ({ page }) => {
+  await page.goto('/leaderboard?exp=1');
+  await expect(page.locator('[data-testid^="example-"]')).toHaveCount(10);
+  await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute('src', '/api/audio/hume_focus_broad_1.wav');
+});
+
+test('Experiment 2: an example clip per model', async ({ page }) => {
+  await page.goto('/leaderboard?exp=2');
   await expect(page.locator('[data-testid^="example-"]')).toHaveCount(10);
   await expect(page.getByTestId('example-human').locator('audio')).toHaveAttribute('src', '/api/audio/servant_a_1.wav');
   await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute(
