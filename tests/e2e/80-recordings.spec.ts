@@ -111,7 +111,7 @@ test('the upload API checks session, prompt, content type and size', async ({ pa
   expect((await post('exp1-nonsense', 'audio/wav', audio)).status()).toBe(400);
   expect((await post('../../etc/passwd', 'audio/wav', audio)).status()).toBe(400);
   expect((await post('exp1-broad', 'text/plain', audio)).status()).toBe(415);
-  expect((await post('exp1-broad', 'audio/wav', Buffer.alloc(5 * 1024 * 1024 + 1))).status()).toBe(413);
+  expect((await post('exp1-broad', 'audio/wav', Buffer.alloc(4 * 1024 * 1024 + 1))).status()).toBe(413);
   const ok = await post('exp2-servant_actress-b', 'audio/wav', audio);
   expect(ok.status()).toBe(201);
   const { id } = (await ok.json()) as { id: number };

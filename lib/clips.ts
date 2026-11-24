@@ -1,6 +1,6 @@
 // A stimulus clip and the arena's block construction. Pure — no Node builtins, because the
 // arena client component imports this module. Where clips come from (the stimulus CSVs
-// joined against AUDIO_DIR) lives in lib/stimuli.ts and lib/clip-manifest.ts.
+// that the stimuli manifest lists) lives in lib/stimuli.ts and lib/clip-manifest.ts.
 
 import type { Experiment } from './models.ts';
 import { INTENDED_QUESTION, type Exp1Condition, type Interpretation } from './experiments.ts';
@@ -9,7 +9,7 @@ export interface Clip {
   /** Basename, e.g. `hume_focus_melon_3.wav`. Unique across the corpus (the manifest asserts
    *  it) and the only thing a client ever names. */
   file: string;
-  /** Path relative to AUDIO_DIR, same layout as the tts-sts-audio repo. Server-side only in
+  /** Path inside a tts-sts-audio checkout (the stimulus CSVs' layout). Server-side only in
    *  practice, but harmless to ship: it is built from the CSVs, never from request input. */
   relPath: string;
   experiment: Experiment;
@@ -19,6 +19,12 @@ export interface Clip {
   /** Exp 2 only: intended interpretation variant, 'a' or 'b'. */
   variant: 'a' | 'b' | null;
   take: number;
+}
+
+/** The URL browsers load a clip from: a static file under public/stimuli/ (on Vercel, served by
+ *  the CDN, with Range support). */
+export function stimulusUrl(file: string): string {
+  return `/stimuli/${encodeURIComponent(file)}`;
 }
 
 /** What the arena client receives: everything but the on-disk path. */

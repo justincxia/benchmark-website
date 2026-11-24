@@ -3,11 +3,12 @@
 import { useRef, useState } from 'react';
 import { useTheme } from '@/lib/theme';
 import { InfoHeading } from '@/components/info-heading';
+import { stimulusUrl } from '@/lib/clips';
 
 export interface ExampleClip {
   key: string;
   name: string;
-  /** Clip basename served by /api/audio, or null when it is not in AUDIO_DIR. */
+  /** Clip basename, served at /stimuli/<file>; null when the manifest doesn't list it. */
   file: string | null;
 }
 
@@ -53,7 +54,7 @@ function ClipCard({ clip }: { clip: ExampleClip }) {
         <>
           <audio
             ref={ref}
-            src={`/api/audio/${encodeURIComponent(clip.file)}`}
+            src={stimulusUrl(clip.file)}
             preload="none"
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}

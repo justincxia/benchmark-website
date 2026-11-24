@@ -37,15 +37,15 @@ test('the old experiment addresses lead to the matching leaderboard view', async
 test('Experiment 1: an example clip per model', async ({ page }) => {
   await page.goto('/leaderboard?exp=1');
   await expect(page.locator('[data-testid^="example-"]')).toHaveCount(10);
-  await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute('src', '/api/audio/hume_focus_broad_1.wav');
+  await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute('src', '/stimuli/hume_focus_broad_1.wav');
 });
 
 test('Experiment 2: an example clip per model', async ({ page }) => {
   await page.goto('/leaderboard?exp=2');
   await expect(page.locator('[data-testid^="example-"]')).toHaveCount(10);
-  await expect(page.getByTestId('example-human').locator('audio')).toHaveAttribute('src', '/api/audio/servant_a_1.wav');
+  await expect(page.getByTestId('example-human').locator('audio')).toHaveAttribute('src', '/stimuli/servant_a_1.wav');
   await expect(page.getByTestId('example-hume').locator('audio')).toHaveAttribute(
     'src',
-    '/api/audio/hume_servant_actress_a_1.wav'
+    '/stimuli/hume_servant_actress_a_1.wav'
   );
 });

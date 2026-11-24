@@ -3,7 +3,7 @@ import { insertRecording } from '@/lib/db';
 import { requestUser } from '@/lib/request-user';
 import { buildPrompts } from '@/lib/prompts';
 import { loadExp2Sentences } from '@/lib/stimuli';
-import { MAX_RECORDING_BYTES, validateRecordingUpload } from '@/lib/recording-input';
+import { MAX_RECORDING_BYTES, MAX_RECORDING_LABEL, validateRecordingUpload } from '@/lib/recording-input';
 import { removeRecordingFile, saveRecordingFile } from '@/lib/recordings-store';
 
 /** Reads at most `cap` + 1 bytes, so an oversized body is rejected without buffering it all. */
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'sign in required' }, { status: 401 });
 
   const declared = Number(request.headers.get('content-length') ?? '0');
-  if (declared > MAX_RECORDING_BYTES) return NextResponse.json({ error: 'recording too large (max 5 MB)' }, { status: 413 });
+  if (declared > MAX_RECORDING_BYTES) return NextResponse.json({ error: `recording too large (max ${MAX_RECORDING_LABEL})` }, { status: 413 });
   const bytes = await readCapped(request, MAX_RECORDING_BYTES);
   const size = bytes ? bytes.byteLength : MAX_RECORDING_BYTES + 1;
 

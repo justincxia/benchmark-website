@@ -1,14 +1,19 @@
 import { createReadStream, statSync } from 'node:fs';
 import { Readable } from 'node:stream';
-import { getManifest, audioDir, clipPath } from '@/lib/clip-manifest';
+import path from 'node:path';
+import { diskAudioDir, getManifest } from '@/lib/clip-manifest';
 
-// Reads the filesystem per request; nothing here is prerenderable.
+// Serves clips from AUDIO_DIR for local test runs only: next.config.ts rewrites /stimuli/<file>
+// here when AUDIO_DIR is set. Everywhere else (Vercel, `npm run dev` after copy-audio) clips are
+// static files in public/stimuli/ and this route answers 404.
 export const dynamic = 'force-dynamic';
 
 const CONTENT_TYPES: Record<string, string> = { wav: 'audio/wav', mp3: 'audio/mpeg' };
 
 export async function GET(request: Request, ctx: { params: Promise<{ file: string }> }) {
   const { file } = await ctx.params;
+  const dir = diskAudioDir();
+  if (!dir) return new Response('Not found', { status: 404 });
 
   // The manifest is the allowlist. The requested name is only ever compared against manifest
   // entries; the path opened is the entry's own, built from the stimulus CSVs.
@@ -20,7 +25,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ file: strin
   }
   if (!clip) return new Response('Not found', { status: 404 });
 
-  const full = clipPath(audioDir(), clip);
+  const full = path.join(dir, clip.relPath);
   let size: number;
   try {
     size = statSync(full).size;
