@@ -1,7 +1,7 @@
 import { PageShell } from '@/components/page-shell';
 import { LeaderboardPage } from '@/components/leaderboard-page';
 import { WaveBackground } from '@/components/wave-background';
-import { getDb, getExp1Counts, getExp2Counts, getExp2InterpBySentence } from '@/lib/db';
+import { getExp1Counts, getExp2Counts, getExp2InterpBySentence } from '@/lib/db';
 import { buildMetricRows, type View } from '@/lib/metrics';
 import { loadListenerResults } from '@/lib/perception';
 import { modelsIn } from '@/lib/models';
@@ -16,9 +16,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const db = getDb();
-  const exp1 = getExp1Counts(db);
-  const exp2 = getExp2Counts(db);
+  const [exp1, exp2] = await Promise.all([getExp1Counts(), getExp2Counts()]);
 
   // ?exp=1, ?exp=2 or ?exp=listeners picks the view. Without it, open on the first experiment that has results.
   const asked = (await searchParams).exp;
@@ -33,6 +31,7 @@ export default async function Page({
             ? 1
             : 2;
   const listeners = experiment === 'listeners' ? loadListenerResults() : null;
+  const interpBySentence = experiment === 2 ? await getExp2InterpBySentence() : {};
 
   return (
     <PageShell background={<WaveBackground />}>
@@ -40,7 +39,7 @@ export default async function Page({
         experiment={experiment}
         rows={listeners ? listeners.rows : buildMetricRows(exp1, exp2, modelsIn(experiment as 1 | 2))}
         listenerCounts={listeners?.counts}
-        interpBySentence={experiment === 2 ? getExp2InterpBySentence(db) : {}}
+        interpBySentence={interpBySentence}
         sentences={loadExp2Sentences()}
         examples={listeners ? [] : exampleClips(experiment as 1 | 2)}
       />

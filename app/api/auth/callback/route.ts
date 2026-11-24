@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getDb, upsertUser } from '@/lib/db';
+import { upsertUser } from '@/lib/db';
 import {
   OAUTH_COOKIE,
   SESSION_COOKIE,
@@ -31,9 +31,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const identity = await exchangeCode(cfg, code, saved, redirectUri(origin));
-    const db = getDb();
-    const user = upsertUser(db, { googleSub: identity.sub, email: identity.email, name: identity.name });
-    const token = createSession(db, user.id);
+    const user = await upsertUser({ googleSub: identity.sub, email: identity.email, name: identity.name });
+    const token = await createSession(user.id);
     const res = NextResponse.redirect(new URL('/account', origin));
     res.cookies.delete(OAUTH_COOKIE);
     res.cookies.set(SESSION_COOKIE, token, cookieOptions(SESSION_TTL_SECONDS));

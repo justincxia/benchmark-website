@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb, insertResponse } from '@/lib/db';
+import { insertResponse } from '@/lib/db';
 import { getManifest } from '@/lib/clip-manifest';
 import { validateResponseInput } from '@/lib/response-input';
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
   let inserted: boolean;
   try {
-    inserted = insertResponse(getDb(), result.value);
+    inserted = await insertResponse(result.value);
   } catch {
     return NextResponse.json({ error: 'could not save response' }, { status: 500 });
   }

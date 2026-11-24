@@ -1,8 +1,8 @@
 // Turns per-model counts into the displayed metrics. Pure — the pages are client components
-// and the unit tests exercise this without a database. Counts come from lib/db.ts.
+// and the unit tests exercise this without a database. Counts come from lib/db/trials.ts.
 
 import { MODELS, type Model } from './models.ts';
-import type { Exp1Counts, Exp2Counts, Exp2InterpBySentence } from './db.ts';
+import type { Exp1Counts, Exp2Counts, Exp2InterpBySentence } from './db/types.ts';
 
 export const DASH = '—';
 

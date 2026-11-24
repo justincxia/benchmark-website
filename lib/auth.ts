@@ -3,8 +3,7 @@
 // stored in SQLite. No Next imports here, so the unit tests can exercise all of it.
 
 import { createHash, randomBytes } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
-import { deleteSession, insertSession, userForSession, type User } from './db.ts';
+import { deleteSession, insertSession, userForSession, type User } from './db/index.ts';
 
 export const SESSION_COOKIE = 'pb_session';
 /** Holds state, nonce and PKCE verifier between /api/auth/login and the callback. */
@@ -183,17 +182,17 @@ export async function exchangeCode(
 // ---- sessions ----
 
 /** Creates a session and returns the cookie value (the raw token; only its hash is stored). */
-export function createSession(db: DatabaseSync, userId: number, nowMs = Date.now()): string {
+export async function createSession(userId: number, nowMs = Date.now()): Promise<string> {
   const token = randomToken();
-  insertSession(db, hashToken(token), userId, nowMs + SESSION_TTL_SECONDS * 1000);
+  await insertSession(hashToken(token), userId, nowMs + SESSION_TTL_SECONDS * 1000);
   return token;
 }
 
-export function sessionUser(db: DatabaseSync, token: string | undefined, nowMs = Date.now()): User | null {
+export async function sessionUser(token: string | undefined, nowMs = Date.now()): Promise<User | null> {
   if (!token) return null;
-  return userForSession(db, hashToken(token), nowMs);
+  return userForSession(hashToken(token), nowMs);
 }
 
-export function endSession(db: DatabaseSync, token: string | undefined): void {
-  if (token) deleteSession(db, hashToken(token));
+export async function endSession(token: string | undefined): Promise<void> {
+  if (token) await deleteSession(hashToken(token));
 }

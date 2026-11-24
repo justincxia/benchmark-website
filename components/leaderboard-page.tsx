@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTheme } from '@/lib/theme';
 import { hasData, metricsFor, withInterpSentences, type MetricRow, type View } from '@/lib/metrics';
 import type { ListenerResults } from '@/lib/perception';
-import type { Exp2InterpBySentence } from '@/lib/db';
+import type { Exp2InterpBySentence } from '@/lib/db/types';
 import { SentenceFilter } from '@/components/sentence-filter';
 import {
   EXP1_CONDITIONS,

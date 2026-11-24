@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildMetricRows, formatMean, formatPct, sortRows, defaultSortKey, hasData, metricsFor, withInterpSentences, DASH } from '../../lib/metrics.ts';
-import type { Exp1Counts, Exp2Counts } from '../../lib/db.ts';
+import type { Exp1Counts, Exp2Counts } from '../../lib/db/types.ts';
 import { MODELS } from '../../lib/models.ts';
 
 test('formatMean rounds half-up to two decimals', () => {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getDb, insertRecording } from '@/lib/db';
+import { insertRecording } from '@/lib/db';
 import { requestUser } from '@/lib/request-user';
 import { buildPrompts } from '@/lib/prompts';
 import { loadExp2Sentences } from '@/lib/stimuli';
@@ -33,7 +33,7 @@ async function readCapped(request: Request, cap: number): Promise<Uint8Array | n
 
 // Upload one Record-tab take: raw audio body, prompt id in ?prompt=.
 export async function POST(request: NextRequest) {
-  const user = requestUser(request);
+  const user = await requestUser(request);
   if (!user) return NextResponse.json({ error: 'sign in required' }, { status: 401 });
 
   const declared = Number(request.headers.get('content-length') ?? '0');
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   const { prompt, mime } = result.value;
   const rel = saveRecordingFile(user.id, mime, bytes!);
   try {
-    const id = insertRecording(getDb(), {
+    const id = await insertRecording({
       userId: user.id,
       experiment: prompt.experiment,
       promptId: prompt.id,

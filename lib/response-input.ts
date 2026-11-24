@@ -5,7 +5,7 @@
 
 import { QUESTION_OPTIONS } from './experiments.ts';
 import { intendedInterpretationOf, intendedQuestionOf, type Clip } from './clips.ts';
-import type { ResponseRecord } from './db.ts';
+import type { ResponseRecord } from './db/types.ts';
 
 const MAX_ROUND = 100_000;
 

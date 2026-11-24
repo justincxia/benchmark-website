@@ -9,13 +9,14 @@ export const dynamic = 'force-dynamic';
 export default async function Page({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await currentUser();
   const { error } = await searchParams;
+  const recordings = user ? await recordingItems(user.id) : [];
   return (
     <PageShell maxWidth="760px">
       <AccountPage
         user={user ? { name: user.name, email: user.email } : null}
         signInConfigured={googleConfig() !== null}
         signInFailed={error === 'signin'}
-        recordings={user ? recordingItems(user.id) : []}
+        recordings={recordings}
       />
     </PageShell>
   );

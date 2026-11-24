@@ -10,6 +10,12 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
+  {
+    // Every data-layer call is async now; an un-awaited one is a lost write or an unchecked error.
+    files: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: { "@typescript-eslint/no-floating-promises": "error" },
+  },
   globalIgnores([
     ".next/**",
     // The Playwright suite's build directory (NEXT_DIST_DIR in playwright.config.ts).
