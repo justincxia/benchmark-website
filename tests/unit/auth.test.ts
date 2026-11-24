@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck -- Phase 1 placeholder: still written against the old SQLite API; its Phase 2 owner ports it to lib/db and removes this line.
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { openDatabase, upsertUser, countRows } from '../../lib/db.ts';
+import { upsertUser } from '../../lib/db/auth.ts';
+import { getSupabase } from '../../lib/db/client.ts';
+import { assertLocalSupabase, uniq } from '../db.ts';
 import {
   authorizationUrl,
   cookieOptions,
@@ -93,33 +93,65 @@ test('exchangeCode posts code + verifier and returns the verified identity', asy
   assert.deepEqual(decodeJwtPayload(`h.${payload}.sig`).sub, '123');
 });
 
-test('sessions: only the token hash is stored; lookup, expiry and sign-out', () => {
-  const db = openDatabase(':memory:');
-  const user = upsertUser(db, { googleSub: 'g1', email: 'a@b.c', name: 'A' });
-  const t0 = Date.now();
-  const token = createSession(db, user.id, t0);
-  const stored = db.prepare('SELECT token_hash FROM sessions').get() as { token_hash: string };
-  assert.equal(stored.token_hash, createHash('sha256').update(token).digest('hex'));
-  assert.notEqual(stored.token_hash, token);
-  assert.equal(hashToken(token), stored.token_hash);
+// ---- users and sessions, against the shared local Supabase: only this file's own rows ----
 
-  assert.equal(sessionUser(db, token, t0)?.id, user.id);
-  assert.equal(sessionUser(db, 'wrong', t0), null);
-  assert.equal(sessionUser(db, undefined, t0), null);
-  // Expired: refused and removed.
-  assert.equal(sessionUser(db, token, t0 + SESSION_TTL_SECONDS * 1000 + 1), null);
-  assert.equal(countRows(db, 'sessions'), 0);
+assertLocalSupabase();
+const myUserIds: number[] = [];
 
-  const t2 = createSession(db, user.id);
-  endSession(db, t2);
-  assert.equal(sessionUser(db, t2), null);
+after(async () => {
+  // Sessions cascade with their user.
+  if (myUserIds.length === 0) return;
+  const { error } = await getSupabase().from('users').delete().in('id', myUserIds);
+  if (error) throw new Error(`cleanup: ${error.message}`);
 });
 
-test('upsertUser keeps one row per Google subject and refreshes name/email', () => {
-  const db = openDatabase(':memory:');
-  const a = upsertUser(db, { googleSub: 'g1', email: 'old@x', name: 'Old' });
-  const b = upsertUser(db, { googleSub: 'g1', email: 'new@x', name: 'New' });
+async function sessionsOf(userId: number): Promise<{ tokenHash: string; expiresAt: number }[]> {
+  const { data, error } = await getSupabase().from('sessions').select('token_hash, expires_at').eq('user_id', userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({ tokenHash: String(r.token_hash), expiresAt: Number(r.expires_at) }));
+}
+
+test('sessions: only the token hash is stored; lookup, expiry and sign-out', async () => {
+  const user = await upsertUser({ googleSub: uniq('g'), email: 'a@b.c', name: 'A' });
+  myUserIds.push(user.id);
+  const t0 = Date.now();
+  const token = await createSession(user.id, t0);
+  const stored = await sessionsOf(user.id);
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].tokenHash, createHash('sha256').update(token).digest('hex'));
+  assert.notEqual(stored[0].tokenHash, token);
+  assert.equal(hashToken(token), stored[0].tokenHash);
+  assert.equal(stored[0].expiresAt, t0 + SESSION_TTL_SECONDS * 1000);
+
+  assert.deepEqual(await sessionUser(token, t0), user);
+  assert.equal(await sessionUser('wrong', t0), null);
+  assert.equal(await sessionUser(undefined, t0), null);
+  // Valid until the last millisecond; expired: refused and removed.
+  assert.equal((await sessionUser(token, t0 + SESSION_TTL_SECONDS * 1000 - 1))?.id, user.id);
+  assert.equal(await sessionUser(token, t0 + SESSION_TTL_SECONDS * 1000 + 1), null);
+  assert.equal((await sessionsOf(user.id)).length, 0);
+
+  const t2 = await createSession(user.id);
+  assert.equal((await sessionUser(t2))?.id, user.id);
+  await endSession(t2);
+  assert.equal(await sessionUser(t2), null);
+  assert.equal((await sessionsOf(user.id)).length, 0);
+  await endSession(undefined); // no-op without a cookie
+});
+
+test('upsertUser keeps one row per Google subject and refreshes name/email', async () => {
+  const sub = uniq('g');
+  const a = await upsertUser({ googleSub: sub, email: 'old@x', name: 'Old' });
+  myUserIds.push(a.id);
+  const b = await upsertUser({ googleSub: sub, email: 'new@x', name: 'New' });
   assert.equal(a.id, b.id);
+  assert.equal(b.googleSub, sub);
   assert.equal(b.email, 'new@x');
-  assert.equal(countRows(db, 'users'), 1);
+  assert.equal(b.name, 'New');
+  const { count, error } = await getSupabase()
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+    .eq('google_sub', sub);
+  if (error) throw new Error(error.message);
+  assert.equal(count, 1);
 });
