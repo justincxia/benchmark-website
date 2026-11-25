@@ -1,11 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { db, rowOrder } from './helpers';
 
-const EXP1_LIST_ORDER = [
-  'elevenlabs', 'elevenlabs_v4', 'gemini_tts', 'gemini_live', 'openai_tts', 'openai_sts',
-  'hume', 'grok_tts', 'grok_sts', 'nova_sts',
-];
-
 test('Experiment 2 opens sorted by its first column with data, interpretation accuracy', async ({ page }) => {
   await page.goto('/leaderboard?exp=2');
   await expect(page.getByTestId('sort-exp2Interp')).toHaveAttribute('aria-pressed', 'true');
@@ -15,10 +10,13 @@ test('Experiment 2 opens sorted by its first column with data, interpretation ac
   ]);
 });
 
-test('Experiment 1 has no data yet, so it keeps the first column and model-list order', async ({ page }) => {
+test('Experiment 1 opens sorted by focus accuracy; ties keep model-list order', async ({ page }) => {
   await page.goto('/leaderboard?exp=1');
   await expect(page.getByTestId('sort-exp1Focus')).toHaveAttribute('aria-pressed', 'true');
-  expect(await rowOrder(page, 'lb')).toEqual(EXP1_LIST_ORDER);
+  // openai_sts and hume tie at 10.0% and stay in model-list order.
+  expect(await rowOrder(page, 'lb')).toEqual([
+    'nova_sts', 'openai_tts', 'elevenlabs_v4', 'elevenlabs', 'grok_tts', 'gemini_tts', 'grok_sts', 'gemini_live', 'openai_sts', 'hume',
+  ]);
 });
 
 test('clicking Naturalness sorts descending', async ({ page }) => {

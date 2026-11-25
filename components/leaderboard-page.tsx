@@ -205,6 +205,10 @@ function Exp1Description() {
         Focus accuracy is the share of trials where the chosen question is the one the condition answers. Judged
         human is the share of trials where the listener answered Human. Attention-check trials are excluded.
       </p>
+      <p style={{ margin: '10px 0 0' }}>
+        These results come from in-person lab sessions with 10 listeners, each hearing a sample of the recordings, so
+        every model has only 9 to 16 rated trials. Treat the differences between models as preliminary.
+      </p>
     </>
   );
 }

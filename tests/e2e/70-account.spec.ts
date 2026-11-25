@@ -60,7 +60,7 @@ test('the session cookie is httpOnly and SameSite=Lax', async ({ page }) => {
 
 test('leaderboard, experiment pages and arena work the same signed in', async ({ page }) => {
   await signIn(page, 'bob');
-  await page.goto('/leaderboard');
+  await page.goto('/leaderboard?exp=2');
   await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText('69.9%');
   await page.goto('/leaderboard?exp=1');
   await expect(page.locator('h2').first()).toHaveText('Experiment 1: Focus');

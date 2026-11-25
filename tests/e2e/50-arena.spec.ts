@@ -481,9 +481,9 @@ test('with reduced motion the clip graphic is a plain progress bar, and the roun
 });
 
 test('the leaderboard does not move after arena traffic', async ({ page }) => {
-  await page.goto('/leaderboard');
+  await page.goto('/leaderboard?exp=2');
   await expect(page.getByTestId('lb-human-exp2Interp')).toHaveText('69.9%');
   await expect(page.getByTestId('lb-human-exp2Nat')).toHaveText('3.59');
   await page.goto('/leaderboard?exp=1');
-  await expect(page.getByTestId('lb-hume-exp1Focus')).toHaveText('—');
+  await expect(page.getByTestId('lb-hume-exp1Focus')).toHaveText('10.0%');
 });

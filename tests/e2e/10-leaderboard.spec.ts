@@ -16,6 +16,21 @@ const EXP2: Array<[key: string, name: string, interp: string, nat: string]> = [
   ['human', 'Human', '69.9%', '3.59'], // 564/807, 2900/807
 ];
 
+// Exp 1 metrics per model from seed/exp1_results.csv (the in-person sessions, built by
+// scripts/build-exp1-results.ts), matching TTS Focus Task/analyze_in_person.py.
+const EXP1: Array<[key: string, focus: string, nat: string, human: string]> = [
+  ['elevenlabs', '31.3%', '2.88', '18.8%'], // n=16
+  ['elevenlabs_v4', '44.4%', '2.22', '0.0%'], // n=9
+  ['gemini_tts', '20.0%', '2.90', '40.0%'], // n=10
+  ['gemini_live', '11.1%', '2.56', '22.2%'], // n=9
+  ['openai_tts', '46.7%', '2.47', '20.0%'], // n=15
+  ['openai_sts', '10.0%', '2.90', '40.0%'], // n=10
+  ['hume', '10.0%', '3.60', '70.0%'], // n=10
+  ['grok_tts', '23.1%', '1.77', '0.0%'], // n=13
+  ['grok_sts', '18.2%', '1.91', '18.2%'], // n=11
+  ['nova_sts', '50.0%', '2.67', '25.0%'], // n=12
+];
+
 test('page title and header are Prosody Bench, with no other branding', async ({ page }) => {
   await page.goto('/leaderboard');
   await expect(page).toHaveTitle('Prosody Bench');
@@ -23,11 +38,11 @@ test('page title and header are Prosody Bench, with no other branding', async ({
   await expect(page.locator('body')).not.toContainText('Artificial Analysis');
 });
 
-test('with no ?exp, the leaderboard opens on the experiment that has results (Exp 2)', async ({ page }) => {
+test('with no ?exp, the leaderboard opens on the first experiment that has results (Exp 1)', async ({ page }) => {
   await page.goto('/leaderboard');
-  await expect(page.getByTestId('exp-switch-2')).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByTestId('exp-switch-1')).not.toHaveAttribute('aria-current', 'page');
-  await expect(page.locator('h2').first()).toHaveText('Experiment 2: Ambiguity');
+  await expect(page.getByTestId('exp-switch-1')).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId('exp-switch-2')).not.toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('h2').first()).toHaveText('Experiment 1: Focus');
 });
 
 test('Experiment 2 shows the numbers computed from the seeded survey data', async ({ page }) => {
@@ -44,16 +59,18 @@ test('Experiment 2 shows the numbers computed from the seeded survey data', asyn
   await expect(page.getByTestId('no-data')).toHaveCount(0);
 });
 
-test('Experiment 1 shows — for every model until its results are seeded, and says so', async ({ page }) => {
+test('Experiment 1 shows the numbers from the in-person sessions', async ({ page }) => {
   await page.goto('/leaderboard?exp=1');
   const rows = await rowOrder(page, 'lb');
   expect(rows).toHaveLength(10);
   expect(rows).not.toContain('human');
-  for (const metric of ['exp1Focus', 'exp1Nat', 'exp1Human']) {
-    await expect(page.locator(`[data-testid^="lb-"][data-testid$="-${metric}"]`)).toHaveText(Array(10).fill('—'));
+  for (const [key, focus, nat, human] of EXP1) {
+    await expect(page.getByTestId(`lb-${key}-exp1Focus`)).toHaveText(focus);
+    await expect(page.getByTestId(`lb-${key}-exp1Nat`)).toHaveText(nat);
+    await expect(page.getByTestId(`lb-${key}-exp1Human`)).toHaveText(human);
   }
   await expect(page.locator('[data-testid$="-exp2Interp"]')).toHaveCount(0);
-  await expect(page.getByTestId('no-data')).toBeVisible();
+  await expect(page.getByTestId('no-data')).toHaveCount(0);
 });
 
 test('the column headers are Model plus the picked experiment\'s metrics', async ({ page }) => {
@@ -131,10 +148,13 @@ test('charts: one per column with data, bars ordered highest first; none without
       expect(a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3], `labels ${i} and ${j} overlap`).toBe(false);
     }
 
+  // Experiment 1 has a chart per column too, but no scatter.
   await page.goto('/leaderboard?exp=1');
+  expect(await bars('exp1Focus')).toEqual([
+    'nova_sts', 'openai_tts', 'elevenlabs_v4', 'elevenlabs', 'grok_tts', 'gemini_tts', 'grok_sts', 'gemini_live', 'openai_sts', 'hume',
+  ]);
+  expect((await bars('exp1Human'))[0]).toBe('hume');
   await expect(page.getByTestId('scatter')).toHaveCount(0);
-  await expect(page.locator('[data-testid^="chart-"]')).toHaveCount(0);
-  await expect(page.getByTestId('info-charts')).toHaveCount(0);
 });
 
 test('acoustic plots: the picked model and sentence choose the image, and every image loads', async ({ page }) => {
